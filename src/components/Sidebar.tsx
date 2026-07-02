@@ -39,6 +39,8 @@ const COACH_NAV = [
 const BOXER_NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/attendance', label: 'My Attendance', icon: CheckSquare },
+  { href: '/boxers', label: 'Boxers', icon: Users },
+  { href: '/analysis', label: 'Analysis', icon: BarChart3 },
   { href: '/tournaments', label: 'Tournaments', icon: Trophy },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/settings', label: 'Settings', icon: Settings },

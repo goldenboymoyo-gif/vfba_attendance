@@ -4,8 +4,7 @@ import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { useBoxers } from '@/hooks/useBoxers';
 import { useAttendanceLogs } from '@/hooks/useAttendanceLogs';
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title } from 'chart.js';
 import { Doughnut, Bar, Line } from 'react-chartjs-2';
 
@@ -13,14 +12,9 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 
 export default function AnalysisPage() {
   const { profile } = useAuth();
-  const router = useRouter();
   const { boxers, loading } = useBoxers();
   const { logs } = useAttendanceLogs(200);
   const [daysRange, setDaysRange] = useState<number>(14);
-
-  useEffect(() => {
-    if (profile && profile.role !== 'coach' && profile.role !== 'admin') router.replace('/dashboard');
-  }, [profile, router]);
 
   const present = boxers.filter((b) => b.status === 'in').length;
   const late = boxers.filter((b) => b.status === 'late').length;

@@ -3,8 +3,7 @@
 import { AppShell } from '@/components/AppShell';
 import { useBoxers } from '@/hooks/useBoxers';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import type { Boxer } from '@/lib/types';
@@ -15,16 +14,12 @@ function initials(name: string) {
 
 export default function BoxersPage() {
   const { profile } = useAuth();
-  const router = useRouter();
   const { boxers, loading } = useBoxers();
   const toast = useToast();
   const [selected, setSelected] = useState<Boxer | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (profile && profile.role !== 'coach' && profile.role !== 'admin') router.replace('/dashboard');
-  }, [profile, router]);
+  const canManageBoxers = profile?.role === 'coach' || profile?.role === 'admin';
 
   async function handleDelete(uid: string, name: string) {
     if (!confirm(`Remove ${name} permanently? This cannot be undone.`)) return;
@@ -49,12 +44,14 @@ export default function BoxersPage() {
       <div className="mb-1 text-[12.5px] text-[var(--text-dim)]">Boxers</div>
       <div className="mb-5 flex items-center justify-between">
         <h1 className="font-display text-[23px] font-bold tracking-tight">Boxer Roster</h1>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-red px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-dark"
-        >
-          <Plus size={16} /> Add Boxer
-        </button>
+        {canManageBoxers && (
+          <button
+            onClick={() => setShowAdd(true)}
+            className="flex items-center gap-1.5 rounded-xl bg-red px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-dark"
+          >
+            <Plus size={16} /> Add Boxer
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -67,14 +64,16 @@ export default function BoxersPage() {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {boxers.map((b) => (
             <div key={b.id} className="card relative cursor-pointer" onClick={() => setSelected(b)}>
-              <button
-                onClick={(e) => { e.stopPropagation(); handleDelete(b.id, b.name); }}
-                disabled={removing === b.id}
-                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg border bg-[var(--surface)] text-red hover:bg-red hover:text-white disabled:opacity-40"
-                title="Remove boxer"
-              >
-                <Trash2 size={13} />
-              </button>
+              {canManageBoxers && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDelete(b.id, b.name); }}
+                  disabled={removing === b.id}
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg border bg-[var(--surface)] text-red hover:bg-red hover:text-white disabled:opacity-40"
+                  title="Remove boxer"
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
               <div className="mb-2.5 flex items-center justify-between">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-sm font-semibold text-white">
                   {initials(b.name)}
