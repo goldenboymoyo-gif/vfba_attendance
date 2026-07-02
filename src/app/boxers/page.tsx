@@ -96,8 +96,8 @@ export default function BoxersPage() {
       )}
 
       {selected && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 p-5" onClick={() => setSelected(null)}>
-          <div className="w-full max-w-[420px] rounded-2xl bg-[var(--surface)] p-7 shadow-lg2" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[300] flex items-start justify-center bg-black/50 p-4 overflow-auto sm:items-center" onClick={() => setSelected(null)}>
+          <div className="w-full max-w-[420px] rounded-2xl bg-[var(--surface)] p-7 shadow-lg2 max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-ink text-lg font-semibold text-white">
                 {initials(selected.name)}
@@ -204,8 +204,8 @@ function AddBoxerModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 p-5" onClick={onClose}>
-      <div className="w-full max-w-[480px] rounded-2xl bg-[var(--surface)] p-7 shadow-lg2" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[300] flex items-start justify-center bg-black/50 p-4 overflow-auto sm:items-center" onClick={onClose}>
+      <div className="w-full max-w-[480px] rounded-2xl bg-[var(--surface)] p-7 shadow-lg2 max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 font-display text-[15px] font-bold">Add New Boxer</div>
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
