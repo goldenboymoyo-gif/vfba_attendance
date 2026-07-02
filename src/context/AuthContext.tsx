@@ -31,6 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const unsubDocRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
+    if (!auth) {
+      console.error('Firebase auth not initialized. Check NEXT_PUBLIC_FIREBASE_* settings.');
+      setError('Firebase not configured. Contact the app admin.');
+      setLoading(false);
+      return;
+    }
+
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
 
@@ -67,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => {
-      unsubAuth();
+      if (typeof unsubAuth === 'function') unsubAuth();
       if (unsubDocRef.current) {
         unsubDocRef.current();
         unsubDocRef.current = null;

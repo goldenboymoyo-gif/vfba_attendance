@@ -32,6 +32,7 @@ export default function RegisterPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            role: 'boxer',
             name,
             email,
             regNo: '',
@@ -50,11 +51,11 @@ export default function RegisterPage() {
           throw new Error(data.error || 'Failed to create boxer record.');
         }
       } else {
-        // For coaches, create a minimal users doc via the admin API as well.
+        // For coaches, request the admin API to create a coach users doc.
         await fetch('/api/boxers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, phone: phone || '' }),
+          body: JSON.stringify({ role: 'coach', name, email, phone: phone || '' }),
         });
       }
       router.replace('/dashboard');

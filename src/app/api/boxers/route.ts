@@ -38,7 +38,8 @@ async function getAdmin() {
 export async function POST(req: Request) {
   try {
     const { adminAuth, adminDb } = await getAdmin();
-    const { name, email, regNo, age, gender, weightClass, phone, emergencyContact, medicalNotes, coachId } = await req.json();
+    const body = await req.json();
+    const { role, name, email, regNo, age, gender, weightClass, phone, emergencyContact, medicalNotes, coachId } = body;
 
     if (!name || !email) {
       return NextResponse.json({ error: 'Name and email are required.' }, { status: 400 });
@@ -55,34 +56,39 @@ export async function POST(req: Request) {
       uid = user.uid;
     }
 
+    // Create/update the users profile with correct role
+    const userRole = role === 'coach' ? 'coach' : 'boxer';
     await adminDb.doc(`users/${uid}`).set({
       name,
       email,
-      role: 'boxer',
+      role: userRole,
       phone: phone || '',
     }, { merge: true });
 
-    await adminDb.doc(`boxers/${uid}`).set({
-      name,
-      regNo: regNo || '',
-      age: age || 0,
-      gender: gender || '',
-      weightClass: weightClass || '',
-      phone: phone || '',
-      emergencyContact: emergencyContact || '',
-      medicalNotes: medicalNotes || '',
-      joined: new Date().toISOString().slice(0, 10),
-      coachId: coachId || '',
-      status: 'absent',
-      checkInTime: null,
-      checkOutTime: null,
-      streak: 0,
-      attendancePct: 0,
-      goal: '',
-      achievements: [],
-    });
+    // Only create a `boxers` document when role is boxer
+    if (userRole === 'boxer') {
+      await adminDb.doc(`boxers/${uid}`).set({
+        name,
+        regNo: regNo || '',
+        age: age || 0,
+        gender: gender || '',
+        weightClass: weightClass || '',
+        phone: phone || '',
+        emergencyContact: emergencyContact || '',
+        medicalNotes: medicalNotes || '',
+        joined: new Date().toISOString().slice(0, 10),
+        coachId: coachId || '',
+        status: 'absent',
+        checkInTime: null,
+        checkOutTime: null,
+        streak: 0,
+        attendancePct: 0,
+        goal: '',
+        achievements: [],
+      });
+    }
 
-    return NextResponse.json({ uid, email, defaultPassword });
+    return NextResponse.json({ uid, email, defaultPassword, role: userRole });
   } catch (e: any) {
     console.error('POST /api/boxers error:', e);
     return NextResponse.json({ error: e.message || 'Failed to create boxer.' }, { status: 500 });
