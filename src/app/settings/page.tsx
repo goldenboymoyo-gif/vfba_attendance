@@ -5,6 +5,8 @@ import { useTheme } from 'next-themes';
 import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { storage } from '@/lib/firebase';
+import { ref as storageRef, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 
 function initials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
@@ -28,7 +30,8 @@ function resizeImage(file: File, maxDim: number): Promise<string> {
       const ctx = canvas.getContext('2d');
       if (!ctx) { reject(new Error('Canvas context unavailable')); return; }
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/png'));
+      // Use JPEG with reasonable quality to keep the base64 payload small
+      resolve(canvas.toDataURL('image/jpeg', 0.8));
     };
     img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
     img.src = url;
@@ -46,7 +49,7 @@ async function apiUpdateProfile(uid: string, data: Record<string, any>) {
 }
 
 export default function SettingsPage() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { theme, setTheme } = useTheme();
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -64,8 +67,23 @@ export default function SettingsPage() {
     setUploading(true);
     try {
       const dataUrl = await resizeImage(file, 400);
-      await apiUpdateProfile(profile.uid, { photoURL: dataUrl });
-      toast('Profile photo updated.');
+      // Try Storage upload first; if it fails (no billing/permission),
+      // fall back to storing a compressed data URL directly in Firestore.
+      try {
+        const imgRef = storageRef(storage, `profilePhotos/${profile.uid}.jpg`);
+        await uploadString(imgRef, dataUrl, 'data_url');
+        const downloadUrl = await getDownloadURL(imgRef);
+        await apiUpdateProfile(profile.uid, { photoURL: downloadUrl });
+        await refreshProfile();
+        toast('Profile photo uploaded.');
+      } catch (e) {
+        console.warn('Storage upload failed, falling back to Firestore:', e);
+        // create a smaller fallback image to reduce Firestore storage size
+        const fallbackDataUrl = await resizeImage(file, 240);
+        await apiUpdateProfile(profile.uid, { photoURL: fallbackDataUrl });
+        await refreshProfile();
+        toast('Profile photo saved (fallback).');
+      }
     } catch (e: any) {
       console.error('handlePhotoUpload error:', e);
       toast(e.message || 'Failed to upload photo.', false);
@@ -77,7 +95,15 @@ export default function SettingsPage() {
   async function handleRemovePhoto() {
     if (!profile) return;
     try {
+      // Try to delete from Storage if present
+      try {
+        const imgRef = storageRef(storage, `profilePhotos/${profile.uid}.jpg`);
+        await deleteObject(imgRef);
+      } catch (e) {
+        // ignore storage delete errors
+      }
       await apiUpdateProfile(profile.uid, { photoURL: '' });
+      await refreshProfile();
       toast('Profile photo removed.');
     } catch (e: any) {
       console.error('handleRemovePhoto error:', e);
@@ -94,6 +120,9 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       await apiUpdateProfile(profile.uid, { name: trimmedName, phone: trimmedPhone });
+      await refreshProfile();
+      setName(trimmedName);
+      setPhone(trimmedPhone);
       toast('Profile updated.');
     } catch (e: any) {
       console.error('handleSave error:', e);

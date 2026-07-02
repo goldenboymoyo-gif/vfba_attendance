@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBoxers } from '@/hooks/useBoxers';
 import { useAttendanceLogs } from '@/hooks/useAttendanceLogs';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title } from 'chart.js';
 import { Doughnut, Bar, Line } from 'react-chartjs-2';
 
@@ -16,9 +16,10 @@ export default function AnalysisPage() {
   const router = useRouter();
   const { boxers, loading } = useBoxers();
   const { logs } = useAttendanceLogs(200);
+  const [daysRange, setDaysRange] = useState<number>(14);
 
   useEffect(() => {
-    if (profile && profile.role !== 'coach') router.replace('/dashboard');
+    if (profile && profile.role !== 'coach' && profile.role !== 'admin') router.replace('/dashboard');
   }, [profile, router]);
 
   const present = boxers.filter((b) => b.status === 'in').length;
@@ -40,7 +41,19 @@ export default function AnalysisPage() {
   const dayTotals: Record<string, number> = {};
   dayOrder.forEach((d) => { dayCount[d] = 0; dayTotals[d] = 0; });
 
-  logs.forEach((l) => {
+  // Filter logs to the selected date range (last `daysRange` days)
+  const cutoff = useMemo(() => {
+    const dt = new Date();
+    dt.setDate(dt.getDate() - daysRange + 1);
+    return dt;
+  }, [daysRange]);
+
+  const filteredLogs = logs.filter((l) => {
+    const d = new Date(l.date);
+    return d >= cutoff;
+  });
+
+  filteredLogs.forEach((l) => {
     const d = new Date(l.date);
     const day = dayOrder[d.getDay()];
     dayTotals[day] = (dayTotals[day] || 0) + 1;
@@ -88,13 +101,16 @@ export default function AnalysisPage() {
 
   const logsByDate = useMemo(() => {
     const byDate: Record<string, number> = {};
-    logs.forEach((l) => {
+    filteredLogs.forEach((l) => {
       const d = l.date;
       byDate[d] = (byDate[d] || 0) + 1;
     });
-    const sorted = Object.entries(byDate).sort(([a], [b]) => a.localeCompare(b)).slice(-14);
-    return { labels: sorted.map(([d]) => d.slice(5)), data: sorted.map(([, c]) => c) };
-  }, [logs]);
+    const sorted = Object.entries(byDate).sort(([a], [b]) => a.localeCompare(b));
+    // keep last `daysRange` labels if available
+    const sliceStart = Math.max(0, sorted.length - daysRange);
+    const sliced = sorted.slice(sliceStart);
+    return { labels: sliced.map(([d]) => d.slice(5)), data: sliced.map(([, c]) => c) };
+  }, [filteredLogs, daysRange]);
 
   const trendData = {
     labels: logsByDate.labels,
@@ -110,82 +126,123 @@ export default function AnalysisPage() {
     }],
   };
 
+  // Resolve CSS vars for chart colors (ensures good contrast in dark mode)
+  function cssVar(name: string, fallback: string) {
+    if (typeof window === 'undefined') return fallback;
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name);
+    return (v || fallback).trim();
+  }
+  const cssText = cssVar('--text', '#111');
+  const cssTextDim = cssVar('--text-dim', '#726A63');
+  const cssBorder = cssVar('--border', 'rgba(28,25,23,0.09)');
+
   return (
     <AppShell>
       <div className="mb-1 text-[12.5px] text-[var(--text-dim)]">Analysis</div>
-      <h1 className="font-display mb-5 text-[23px] font-bold tracking-tight">Attendance Analysis</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="font-display text-[23px] font-bold tracking-tight">Attendance Analysis</h1>
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-[var(--text-dim)] mr-2">Range:</div>
+          {[7, 14, 30].map((d) => (
+            <button
+              key={d}
+              onClick={() => setDaysRange(d)}
+              className={`rounded-full px-3 py-1 text-sm font-semibold ${daysRange === d ? 'bg-red text-white' : 'bg-[var(--surface-2)] text-[var(--text-dim)]'}`}
+            >
+              {d}d
+            </button>
+          ))}
+        </div>
+      </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => <div key={i} className="skeleton h-[120px]" />)}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {[0, 1, 2].map((i) => <div key={i} className="skeleton h-[140px]" />)}
         </div>
       ) : (
         <>
-          <div className="mb-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="card text-center">
-              <div className="font-display text-[27px] font-bold">{total}</div>
-              <div className="mt-1.5 text-[12.5px] font-semibold text-[var(--text-dim)]">Total Boxers</div>
+          <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="card p-4">
+              <div className="text-sm text-[var(--text-dim)]">Total Boxers</div>
+              <div className="mt-2 font-display text-2xl font-bold">{total}</div>
             </div>
-            <div className="card text-center">
-              <div className="font-display text-[27px] font-bold" style={{ color: '#1D7A4C' }}>{present}</div>
-              <div className="mt-1.5 text-[12.5px] font-semibold text-[var(--text-dim)]">Present Now</div>
+            <div className="card p-4">
+              <div className="text-sm text-[var(--text-dim)]">Checked In</div>
+              <div className="mt-2 font-display text-2xl font-bold" style={{ color: '#1D7A4C' }}>{present}</div>
             </div>
-            <div className="card text-center">
-              <div className="font-display text-[27px] font-bold" style={{ color: '#9A6B0C' }}>{late}</div>
-              <div className="mt-1.5 text-[12.5px] font-semibold text-[var(--text-dim)]">Late Today</div>
-            </div>
-            <div className="card text-center">
-              <div className="font-display text-[27px] font-bold">{logs.length}</div>
-              <div className="mt-1.5 text-[12.5px] font-semibold text-[var(--text-dim)]">Total Logs</div>
+            <div className="card p-4">
+              <div className="text-sm text-[var(--text-dim)]">Late Today</div>
+              <div className="mt-2 font-display text-2xl font-bold" style={{ color: '#9A6B0C' }}>{late}</div>
             </div>
           </div>
 
-          <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="card">
-              <div className="mb-3 font-display text-[15px] font-bold">Today&apos;s Status Breakdown</div>
-              <div className="mx-auto max-w-[240px]">
-                <Doughnut data={statusData} options={{ cutout: '70%', plugins: { legend: { position: 'bottom' } } }} />
+          <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="card col-span-2 p-4">
+              <div className="mb-3 font-display text-[15px] font-bold">Daily Check-in Trend ({daysRange} days)</div>
+              <div className="h-64">
+                <Line
+                  data={trendData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                      y: { beginAtZero: true, grid: { color: cssBorder }, ticks: { color: cssTextDim } },
+                      x: { grid: { display: false }, ticks: { color: cssTextDim } },
+                    },
+                    plugins: { legend: { display: false, labels: { color: cssText } } },
+                  }}
+                />
               </div>
             </div>
 
-            <div className="card">
-              <div className="mb-3 font-display text-[15px] font-bold">Attendance % by Day of Week</div>
-              <Bar
-                data={dayChartData}
-                options={{
-                  scales: { y: { beginAtZero: true, max: 100, grid: { color: 'var(--border)' } }, x: { grid: { display: false } } },
-                  plugins: { legend: { display: false } },
-                }}
-              />
+            <div className="card p-4">
+              <div className="mb-3 font-display text-[15px] font-bold">Status Breakdown</div>
+              <div className="mx-auto max-w-[240px]">
+                <Doughnut
+                  data={statusData}
+                  options={{
+                    cutout: '70%',
+                    plugins: { legend: { position: 'bottom', labels: { color: cssText } } },
+                  }}
+                />
+              </div>
             </div>
           </div>
 
           <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="card">
-              <div className="mb-3 font-display text-[15px] font-bold">Daily Check-in Trend (14 days)</div>
-              <Line
-                data={trendData}
-                options={{
-                  scales: { y: { beginAtZero: true, grid: { color: 'var(--border)' } }, x: { grid: { display: false } } },
-                  plugins: { legend: { display: false } },
-                }}
-              />
+            <div className="card p-4">
+              <div className="mb-3 font-display text-[15px] font-bold">Attendance % by Day</div>
+              <div className="h-56">
+                <Bar
+                  data={dayChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100, grid: { color: cssBorder }, ticks: { color: cssTextDim } }, x: { grid: { display: false }, ticks: { color: cssTextDim } } },
+                    plugins: { legend: { display: false, labels: { color: cssText } } },
+                  }}
+                />
+              </div>
             </div>
 
-            <div className="card">
+            <div className="card p-4">
               <div className="mb-3 font-display text-[15px] font-bold">Top Attendance Rates</div>
-              <Bar
-                data={topBoxerData}
-                options={{
-                  indexAxis: 'y' as const,
-                  scales: { x: { beginAtZero: true, max: 100, grid: { color: 'var(--border)' } }, y: { grid: { display: false } } },
-                  plugins: { legend: { display: false } },
-                }}
-              />
+              <div className="h-56">
+                <Bar
+                  data={topBoxerData}
+                  options={{
+                    indexAxis: 'y' as const,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { beginAtZero: true, max: 100, grid: { color: cssBorder }, ticks: { color: cssTextDim } }, y: { grid: { display: false }, ticks: { color: cssTextDim } } },
+                    plugins: { legend: { display: false, labels: { color: cssText } } },
+                  }}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="card">
+          <div className="card p-4">
             <div className="mb-3 font-display text-[15px] font-bold">Top Streaks</div>
             <table className="w-full text-[13.5px]">
               <thead>

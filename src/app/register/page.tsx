@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 
 type RegisterRole = 'boxer' | 'coach';
 
@@ -25,31 +24,37 @@ export default function RegisterPage() {
     setError(null);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
-      await setDoc(doc(db, 'users', cred.user.uid), {
-        name,
-        email,
-        phone,
-        role,
-      });
+      // Ensure server-side records exist using the admin API. This uses the
+      // admin SDK to write `users` and `boxers` documents so admins see new
+      // signups reliably (avoids client-side rules/race issues).
       if (role === 'boxer') {
-        await setDoc(doc(db, 'boxers', cred.user.uid), {
-          name,
-          phone: phone || '',
-          status: 'absent',
-          checkInTime: null,
-          checkOutTime: null,
-          streak: 0,
-          attendancePct: 0,
-          goal: '',
-          regNo: '',
-          age: 0,
-          gender: '',
-          weightClass: '',
-          emergencyContact: '',
-          joined: new Date().toISOString().slice(0, 10),
-          coachId: '',
-          medicalNotes: '',
-          achievements: [],
+        const res = await fetch('/api/boxers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            regNo: '',
+            age: 0,
+            gender: '',
+            weightClass: '',
+            phone: phone || '',
+            emergencyContact: '',
+            medicalNotes: '',
+            coachId: '',
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          console.error('Failed to create boxer via admin API', data);
+          throw new Error(data.error || 'Failed to create boxer record.');
+        }
+      } else {
+        // For coaches, create a minimal users doc via the admin API as well.
+        await fetch('/api/boxers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, phone: phone || '' }),
         });
       }
       router.replace('/dashboard');

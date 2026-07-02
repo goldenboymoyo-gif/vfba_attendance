@@ -20,7 +20,7 @@ const STATUS_STYLE: Record<AttendanceStatus, string> = {
 };
 const STATUS_LABEL: Record<AttendanceStatus, string> = {
   in: 'Present',
-  out: 'Present',
+  out: 'Checkout',
   late: 'Late',
   absent: 'Absent',
 };

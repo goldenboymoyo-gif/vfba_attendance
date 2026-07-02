@@ -112,22 +112,22 @@ export default function BoxersPage() {
                 </div>
               </div>
             </div>
-            <div className="mb-3.5 grid grid-cols-2 gap-2.5 text-sm">
+            <div className="mb-3.5 flex flex-col gap-3 text-sm">
               <div>
                 <label className="mb-1 block text-[11.5px] font-semibold text-[var(--text-dim)]">Age / Gender</label>
-                {selected.age || '?'} · {selected.gender || '?'}
+                <div className="text-sm">{selected.age || '?'} · {selected.gender || '?'}</div>
               </div>
               <div>
                 <label className="mb-1 block text-[11.5px] font-semibold text-[var(--text-dim)]">Joined</label>
-                {selected.joined || '?'}
+                <div className="text-sm">{selected.joined || '?'}</div>
               </div>
               <div>
                 <label className="mb-1 block text-[11.5px] font-semibold text-[var(--text-dim)]">Phone</label>
-                {selected.phone || '—'}
+                <div className="text-sm">{selected.phone || '—'}</div>
               </div>
               <div>
                 <label className="mb-1 block text-[11.5px] font-semibold text-[var(--text-dim)]">Emergency</label>
-                <span className="text-xs">{selected.emergencyContact || '—'}</span>
+                <div className="text-sm">{selected.emergencyContact || '—'}</div>
               </div>
             </div>
             <label className="mb-1 block text-[11.5px] font-semibold text-[var(--text-dim)]">Medical Notes</label>

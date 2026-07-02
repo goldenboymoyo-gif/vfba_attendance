@@ -2,12 +2,32 @@ import { NextResponse } from 'next/server';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import fs from 'fs';
 
 function getAdminApp() {
   if (getApps().length) return getApps()[0];
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (raw) return initializeApp({ credential: cert(JSON.parse(raw)) });
-  throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set.');
+
+  // Local dev fallback: try reading a service-account.json file from the
+  // project root or `server/` directory. This makes `npm run dev` and the
+  // signup flow work without setting env vars locally.
+  const candidates = [
+    `${process.cwd()}/service-account.json`,
+    `${process.cwd()}/server/service-account.json`,
+  ];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        const rawFile = fs.readFileSync(p, 'utf8');
+        return initializeApp({ credential: cert(JSON.parse(rawFile)) });
+      }
+    } catch (e) {
+      // ignore and try next
+    }
+  }
+
+  throw new Error('FIREBASE_SERVICE_ACCOUNT not set and no service-account.json found.');
 }
 
 async function getAdmin() {

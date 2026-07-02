@@ -17,7 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 
 const ADMIN_NAV = [
   { href: '/admin', label: 'Admin', icon: Shield },
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/attendance', label: 'Attendance', icon: CheckSquare },
   { href: '/boxers', label: 'Boxers', icon: Users },
   { href: '/analysis', label: 'Analysis', icon: BarChart3 },
