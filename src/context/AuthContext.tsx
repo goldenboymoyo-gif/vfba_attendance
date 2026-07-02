@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const unsubDocRef = useRef<(() => void) | null>(null);
+  const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!auth) {
@@ -46,27 +47,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         unsubDocRef.current();
         unsubDocRef.current = null;
       }
+      if (graceTimerRef.current) {
+        clearTimeout(graceTimerRef.current);
+        graceTimerRef.current = null;
+      }
 
       if (user) {
         setLoading(true);
-        unsubDocRef.current = onSnapshot(
-          doc(db, 'users', user.uid),
-          (snap) => {
-            if (snap.exists()) {
-              setProfile({ uid: user.uid, ...(snap.data() as Omit<UserProfile, 'uid'>) });
-              setError(null);
-            } else {
+
+        // Always start with a getDoc to avoid the race where onSnapshot
+        // fires before the profile doc is written (during registration).
+        getDoc(doc(db, 'users', user.uid)).then((snap) => {
+          if (snap.exists()) {
+            const data = snap.data() as Omit<UserProfile, 'uid'>;
+            setProfile({ uid: user.uid, ...data });
+            setError(null);
+            setLoading(false);
+
+            // Subscribe to realtime updates now that we have the profile
+            unsubDocRef.current = onSnapshot(
+              doc(db, 'users', user.uid),
+              (s) => {
+                if (s.exists()) {
+                  setProfile({ uid: user.uid, ...(s.data() as Omit<UserProfile, 'uid'>) });
+                  setError(null);
+                }
+              },
+              (err) => console.error('Profile onSnapshot error:', err)
+            );
+          } else {
+            // Doc doesn't exist — give a 3s grace period in case registration
+            // is still writing it, then show the error.
+            graceTimerRef.current = setTimeout(() => {
               setProfile(null);
+              setLoading(false);
               setError('No profile found for this account. Ask your coach to re-add you.');
-            }
-            setLoading(false);
-          },
-          (err) => {
-            console.error(err);
-            setError('Could not load your profile. Check your connection and try again.');
-            setLoading(false);
+            }, 3000);
+
+            // Still subscribe to catch the doc the moment it's created
+            unsubDocRef.current = onSnapshot(
+              doc(db, 'users', user.uid),
+              (s) => {
+                if (s.exists()) {
+                  if (graceTimerRef.current) {
+                    clearTimeout(graceTimerRef.current);
+                    graceTimerRef.current = null;
+                  }
+                  setProfile({ uid: user.uid, ...(s.data() as Omit<UserProfile, 'uid'>) });
+                  setError(null);
+                  setLoading(false);
+                }
+              },
+              (err) => {
+                console.error('Profile onSnapshot error:', err);
+                setError('Could not load your profile. Check your connection and try again.');
+                setLoading(false);
+              }
+            );
           }
-        );
+        }).catch((err) => {
+          console.error('getDoc error:', err);
+          setError('Could not load your profile. Check your connection and try again.');
+          setLoading(false);
+        });
       } else {
         setProfile(null);
         setLoading(false);
@@ -78,6 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (unsubDocRef.current) {
         unsubDocRef.current();
         unsubDocRef.current = null;
+      }
+      if (graceTimerRef.current) {
+        clearTimeout(graceTimerRef.current);
       }
     };
   }, []);

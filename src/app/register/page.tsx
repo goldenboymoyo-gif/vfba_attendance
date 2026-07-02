@@ -29,7 +29,28 @@ export default function RegisterPage() {
       role: userRole,
       phone: phone || '',
     });
-    // Boxers doc will be auto-created by BoxerDashboard if missing
+    // Create boxers doc too so they show up in the roster immediately
+    if (userRole === 'boxer') {
+      await setDoc(doc(db, 'boxers', uid), {
+        name,
+        regNo: '',
+        age: 0,
+        gender: '',
+        weightClass: '',
+        phone: phone || '',
+        emergencyContact: '',
+        medicalNotes: '',
+        joined: new Date().toISOString().slice(0, 10),
+        coachId: '',
+        status: 'absent',
+        checkInTime: null,
+        checkOutTime: null,
+        streak: 0,
+        attendancePct: 0,
+        goal: '',
+        achievements: [],
+      });
+    }
     console.log('Profile created via client fallback for', uid);
   }
 
