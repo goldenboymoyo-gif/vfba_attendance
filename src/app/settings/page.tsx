@@ -84,7 +84,8 @@ export default function SettingsPage() {
       // fall back to storing a compressed data URL directly in Firestore.
       try {
         const imgRef = storageRef(storage, `profilePhotos/${profile.uid}.jpg`);
-        await uploadString(imgRef, dataUrl, 'data_url');
+        const blob = await resizeImage(file, 400);
+        await uploadBytes(imgRef, blob);
         const downloadUrl = await getDownloadURL(imgRef);
         await updateProfileDoc(profile.uid, { photoURL: downloadUrl });
         await refreshProfile();
@@ -92,7 +93,8 @@ export default function SettingsPage() {
       } catch (e) {
         console.warn('Storage upload failed, falling back to Firestore:', e);
         // create a smaller fallback image to reduce Firestore storage size
-        const fallbackDataUrl = await resizeImage(file, 240);
+        const fallbackBlob = await resizeImage(file, 240);
+        const fallbackDataUrl = await dataUrlFromBlob(fallbackBlob);
         await updateProfileDoc(profile.uid, { photoURL: fallbackDataUrl });
         await refreshProfile();
         toast('Profile photo saved (fallback).');

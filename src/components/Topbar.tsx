@@ -30,16 +30,18 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
 
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    if (!search || search.trim() === '') {
+    const trimmedSearch = search.trim();
+    if (trimmedSearch.length < 3) {
       setResults({ boxers: [], tournaments: [], logs: [] });
       return;
     }
+
     debounceRef.current = window.setTimeout(async () => {
       try {
-        const q = search.trim().toLowerCase();
+        const q = trimmedSearch.toLowerCase();
 
         // Boxers
-        const bSnap = await getDocs(qf(collection(db, 'boxers'), orderBy('name'), limitQ(100)));
+        const bSnap = await getDocs(qf(collection(db, 'boxers'), orderBy('name'), limitQ(20)));
         const bx: any[] = [];
         bSnap.forEach((d: any) => {
           const data: any = { id: d.id, ...(d.data() as any) };
@@ -48,7 +50,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         });
 
         // Tournaments
-        const tSnap = await getDocs(qf(collection(db, 'tournaments'), orderBy('name'), limitQ(50)));
+        const tSnap = await getDocs(qf(collection(db, 'tournaments'), orderBy('name'), limitQ(20)));
         const ts: any[] = [];
         tSnap.forEach((d: any) => {
           const data: any = { id: d.id, ...(d.data() as any) };
@@ -57,7 +59,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         });
 
         // Attendance logs (recent)
-        const lSnap = await getDocs(qf(collection(db, 'attendanceLogs'), orderBy('createdAt'), limitQ(300)));
+        const lSnap = await getDocs(qf(collection(db, 'attendanceLogs'), orderBy('createdAt'), limitQ(50)));
         const ls: any[] = [];
         lSnap.forEach((d: any) => {
           const data: any = { id: d.id, ...(d.data() as any) };
