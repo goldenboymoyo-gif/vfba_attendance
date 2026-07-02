@@ -11,6 +11,7 @@ function today() {
 
 const CHECK_IN_OPEN = '17:00';
 const CHECK_IN_CLOSE = '18:00';
+const AUTO_CHECKOUT_TIME = '19:20';
 
 export function canCheckIn(): boolean {
   const now = nowTime();
@@ -79,6 +80,25 @@ export async function checkOut(boxerId: string) {
     status: 'out',
     createdAt: Date.now(),
   });
+}
+
+/** Auto-checkout a boxer if they are still checked in past 19:20. */
+export async function autoCheckoutIfNeeded(boxerId: string, boxerName: string) {
+  const now = nowTime();
+  if (now < AUTO_CHECKOUT_TIME) return false;
+  await upsertBoxer(doc(db, 'boxers', boxerId), {
+    status: 'out' as const,
+    checkOutTime: now,
+  });
+  await addDoc(collection(db, 'attendanceLogs'), {
+    boxerId,
+    boxerName,
+    date: today(),
+    checkOutTime: now,
+    status: 'out',
+    createdAt: Date.now(),
+  });
+  return true;
 }
 
 /** Boxer saves today's training goal without checking in. */

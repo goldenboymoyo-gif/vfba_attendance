@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useBoxers } from '@/hooks/useBoxers';
 import { useNotifications } from '@/hooks/useNotifications';
-import { checkIn, checkOut, saveGoal, checkInStatus } from '@/lib/actions';
+import { checkIn, checkOut, saveGoal, checkInStatus, autoCheckoutIfNeeded } from '@/lib/actions';
 import { useToast } from '@/context/ToastContext';
 
 export default function BoxerDashboard() {
@@ -16,6 +16,7 @@ export default function BoxerDashboard() {
   const toast = useToast();
   const [goal, setGoal] = useState('');
   const [busy, setBusy] = useState(false);
+  const autoChecked = useRef(false);
 
   const boxerDoc = boxers.find((b) => b.id === profile?.uid);
   const canCheckin = checkInStatus();
@@ -66,6 +67,16 @@ export default function BoxerDashboard() {
       }).catch((e) => console.error('Failed to create boxer record:', e));
     }
   }, [loading, boxerDoc, profile]);
+
+  useEffect(() => {
+    if (loading || autoChecked.current || !me || me.status !== 'in') return;
+    const now = new Date().toTimeString().slice(0, 5);
+    if (now < '19:20') { autoChecked.current = true; return; }
+    autoChecked.current = true;
+    autoCheckoutIfNeeded(me.id, me.name).then((did) => {
+      if (did) toast('You were auto-checked out (training ended at 19:00).');
+    });
+  }, [loading, me?.status]);
 
   useEffect(() => {
     if (me?.goal) setGoal(me.goal);

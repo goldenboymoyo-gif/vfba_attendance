@@ -5,8 +5,8 @@ import { useBoxers } from '@/hooks/useBoxers';
 import { useAttendanceLogs } from '@/hooks/useAttendanceLogs';
 import { useNotifications } from '@/hooks/useNotifications';
 import { StatCard } from '@/components/StatCard';
-import { useState } from 'react';
-import { sendNotification, deleteNotification } from '@/lib/actions';
+import { useState, useEffect, useRef } from 'react';
+import { sendNotification, deleteNotification, autoCheckoutIfNeeded } from '@/lib/actions';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import type { NotificationPriority, NotificationType } from '@/lib/types';
@@ -22,6 +22,21 @@ export default function CoachDashboard() {
   const { profile } = useAuth();
   const toast = useToast();
   const [composing, setComposing] = useState(false);
+  const autoChecked = useRef(false);
+
+  useEffect(() => {
+    if (loading || autoChecked.current) return;
+    const now = new Date().toTimeString().slice(0, 5);
+    if (now < '19:20') { autoChecked.current = true; return; }
+    autoChecked.current = true;
+    boxers.forEach((b) => {
+      if (b.status === 'in') {
+        autoCheckoutIfNeeded(b.id, b.name).then((did) => {
+          if (did) toast(`${b.name} was auto-checked out.`);
+        });
+      }
+    });
+  }, [loading]);
 
   const present = boxers.filter((b) => b.status === 'in').length;
   const late = boxers.filter((b) => b.status === 'late').length;
