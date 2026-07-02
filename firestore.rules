@@ -33,15 +33,17 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // The boxer roster + live status. Boxers can update ONLY their own
-    // check-in/out/goal fields; coaches can read and write everything.
+    // The boxer roster + live status. Boxers can create their own record
+    // (during self-registration) and update ONLY their own check-in/out/goal
+    // fields; coaches can read and write everything.
     match /boxers/{boxerId} {
       allow read: if isSignedIn();
+      allow create: if isCoach() || isOwner(boxerId);
       allow update: if isCoach() ||
         (isOwner(boxerId) &&
           request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['status', 'checkInTime', 'checkOutTime', 'goal']));
-      allow create, delete: if isCoach();
+      allow delete: if isCoach();
     }
 
     // Permanent attendance history.

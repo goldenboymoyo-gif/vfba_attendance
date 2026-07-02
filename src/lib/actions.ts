@@ -75,10 +75,29 @@ export async function saveGoal(boxerId: string, goal: string) {
 }
 
 /** Coach manually corrects a boxer's status (edit/approve attendance). */
-export async function setBoxerStatus(boxerId: string, status: AttendanceStatus, coachNotes?: string) {
-  await updateDoc(doc(db, 'boxers', boxerId), {
+export async function setBoxerStatus(boxerId: string, boxerName: string, status: AttendanceStatus, coachNotes?: string) {
+  const time = nowTime();
+  const updates: Record<string, any> = { status };
+  if (status === 'in' || status === 'late') {
+    updates.checkInTime = time;
+  }
+  if (status === 'out') {
+    updates.checkOutTime = time;
+  }
+  if (coachNotes) {
+    updates.coachNotes = coachNotes;
+  }
+  await updateDoc(doc(db, 'boxers', boxerId), updates);
+  await addDoc(collection(db, 'attendanceLogs'), {
+    boxerId,
+    boxerName,
+    date: today(),
+    checkInTime: status === 'in' || status === 'late' ? time : null,
+    checkOutTime: status === 'out' ? time : null,
     status,
-    ...(coachNotes ? { coachNotes } : {}),
+    goal: '',
+    coachNotes: coachNotes || null,
+    createdAt: Date.now(),
   });
 }
 

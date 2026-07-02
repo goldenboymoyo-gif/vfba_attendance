@@ -31,6 +31,27 @@ export default function RegisterPage() {
         phone,
         role,
       });
+      if (role === 'boxer') {
+        await setDoc(doc(db, 'boxers', cred.user.uid), {
+          name,
+          phone: phone || '',
+          status: 'absent',
+          checkInTime: null,
+          checkOutTime: null,
+          streak: 0,
+          attendancePct: 0,
+          goal: '',
+          regNo: '',
+          age: 0,
+          gender: '',
+          weightClass: '',
+          emergencyContact: '',
+          joined: new Date().toISOString().slice(0, 10),
+          coachId: '',
+          medicalNotes: '',
+          achievements: [],
+        });
+      }
       router.replace('/dashboard');
     } catch (e: any) {
       if (e?.code === 'auth/email-already-in-use') {

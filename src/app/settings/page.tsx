@@ -142,7 +142,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {(profile?.role === 'coach' || profile?.role === 'admin') && (
+          {profile && (
             <>
               <div className="mb-3">
                 <label className="mb-1.5 block text-[12.5px] font-semibold text-[var(--text-dim)]">Profile Photo</label>
@@ -196,12 +196,6 @@ export default function SettingsPage() {
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </>
-          )}
-
-          {profile?.role === 'boxer' && (
-            <div className="rounded-xl border border-dashed p-3 text-xs text-[var(--text-dim)]">
-              Profile editing is managed by your coach. Contact them to update your details.
-            </div>
           )}
         </form>
 

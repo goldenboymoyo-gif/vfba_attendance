@@ -98,7 +98,7 @@ export default function AttendancePage() {
                 <button
                   key={s}
                   onClick={async () => {
-                    await setBoxerStatus(editing.id, s);
+                    await setBoxerStatus(editing.id, editing.name, s);
                     toast(`${editing.name} marked ${STATUS_LABEL[s].toLowerCase()}.`);
                     setEditing(null);
                   }}
