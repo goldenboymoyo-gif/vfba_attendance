@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
@@ -149,7 +150,7 @@ export default function BoxerDashboard() {
       <div className="mb-1 text-[12.5px] text-[var(--text-dim)]">Dashboard</div>
       <h1 className="font-display mb-5 text-[23px] font-bold tracking-tight">Welcome back, {me.name.split(' ')[0]}</h1>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="card text-center">
           <div className="mb-2.5 text-left font-display text-[15px] font-bold">Today&apos;s Status</div>
           <div
@@ -174,39 +175,52 @@ export default function BoxerDashboard() {
           )}
         </div>
 
-        <div className="card">
-          <div className="mb-2.5 font-display text-[15px] font-bold">Today&apos;s Goal</div>
-          <textarea
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            rows={3}
-            placeholder="e.g. Improve footwork and defense…"
-            className="w-full rounded-xl border bg-[var(--surface-2)] px-3.5 py-3 text-sm outline-none focus:border-red"
-          />
-          <button onClick={handleSaveGoal} className="mt-2.5 rounded-xl bg-red px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-dark">
-            Save Goal
-          </button>
-          <div className="mt-4 border-t pt-3.5 text-sm">
-            <div className="flex justify-between py-1">
-              <span className="text-[var(--text-dim)]">Current Streak</span>
-              <strong>{me.streak} days</strong>
+        <div className="grid gap-4">
+          <div className="card">
+            <div className="mb-2.5 font-display text-[15px] font-bold">Today&apos;s Goal</div>
+            <textarea
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              rows={3}
+              placeholder="e.g. Improve footwork and defense…"
+              className="w-full rounded-xl border bg-[var(--surface-2)] px-3.5 py-3 text-sm outline-none focus:border-red"
+            />
+            <button onClick={handleSaveGoal} className="mt-2.5 rounded-xl bg-red px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-dark">
+              Save Goal
+            </button>
+            <div className="mt-4 grid gap-3 border-t pt-3.5 text-sm sm:grid-cols-2">
+              <div className="rounded-xl bg-[var(--surface-2)] p-3">
+                <div className="text-[11px] uppercase tracking-wide text-[var(--text-dim)]">Current Streak</div>
+                <div className="mt-1 font-display text-lg font-bold">{me.streak} days</div>
+              </div>
+              <div className="rounded-xl bg-[var(--surface-2)] p-3">
+                <div className="text-[11px] uppercase tracking-wide text-[var(--text-dim)]">Attendance Rate</div>
+                <div className="mt-1 font-display text-lg font-bold">{pct}%</div>
+              </div>
             </div>
-            <div className="flex justify-between py-1">
-              <span className="text-[var(--text-dim)]">Attendance Rate</span>
-              <strong>{pct}%</strong>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link href="/attendance" className="rounded-full bg-[var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--text-dim)] hover:bg-[var(--surface)]">
+                My Attendance
+              </Link>
+              <Link href="/analysis" className="rounded-full bg-[var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--text-dim)] hover:bg-[var(--surface)]">
+                Analysis
+              </Link>
+              <Link href="/boxers" className="rounded-full bg-[var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--text-dim)] hover:bg-[var(--surface)]">
+                Boxer Roster
+              </Link>
             </div>
           </div>
-        </div>
 
-        <div className="card">
-          <div className="mb-2.5 font-display text-[15px] font-bold">Coach Notifications</div>
-          {notifications.length === 0 && <div className="py-4 text-center text-sm text-[var(--text-dim)]">Nothing new.</div>}
-          {notifications.map((n) => (
-            <div key={n.id} className="border-b py-2.5 last:border-none">
-              <div className="text-[13px] font-semibold">{n.title}</div>
-              <div className="text-xs text-[var(--text-dim)]">{n.body}</div>
-            </div>
-          ))}
+          <div className="card">
+            <div className="mb-2.5 font-display text-[15px] font-bold">Coach Notifications</div>
+            {notifications.length === 0 && <div className="py-4 text-center text-sm text-[var(--text-dim)]">Nothing new.</div>}
+            {notifications.map((n) => (
+              <div key={n.id} className="border-b py-2.5 last:border-none">
+                <div className="text-[13px] font-semibold">{n.title}</div>
+                <div className="text-xs text-[var(--text-dim)]">{n.body}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
