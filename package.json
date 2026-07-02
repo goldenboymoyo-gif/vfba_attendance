@@ -10,7 +10,6 @@
     "seed": "node scripts/seed.mjs"
   },
   "dependencies": {
-    "@next/swc-win32-x64-msvc": "^14.2.5",
     "chart.js": "^4.4.4",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
