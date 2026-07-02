@@ -25,10 +25,8 @@ export default function BoxersPage() {
     if (!confirm(`Remove ${name} permanently? This cannot be undone.`)) return;
     setRemoving(uid);
     try {
-      const res = await fetch('/api/boxers', {
+      const res = await fetch(`/api/boxers?uid=${encodeURIComponent(uid)}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid }),
       });
       if (!res.ok) throw new Error((await res.json()).error);
       toast(`${name} removed.`);
