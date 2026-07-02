@@ -1,22 +1,23 @@
 import { NextResponse } from 'next/server';
-import { readFileSync } from 'fs';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
 function getAdminApp() {
   if (getApps().length) return getApps()[0];
-  const serviceAccount = JSON.parse(
-    readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS || 'service-account.json', 'utf-8')
-  );
-  return initializeApp({ credential: cert(serviceAccount) });
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (raw) return initializeApp({ credential: cert(JSON.parse(raw)) });
+  throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set.');
 }
 
-const adminAuth = getAuth(getAdminApp());
-const adminDb = getFirestore(getAdminApp());
+async function getAdmin() {
+  const app = getAdminApp();
+  return { adminAuth: getAuth(app), adminDb: getFirestore(app) };
+}
 
 export async function POST(req: Request) {
   try {
+    const { adminAuth, adminDb } = await getAdmin();
     const { name, email, regNo, age, gender, weightClass, phone, emergencyContact, medicalNotes, coachId } = await req.json();
 
     if (!name || !email) {
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const { adminAuth, adminDb } = await getAdmin();
     const { uid } = await req.json();
     if (!uid) {
       return NextResponse.json({ error: 'Boxer UID is required.' }, { status: 400 });
