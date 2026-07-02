@@ -31,13 +31,14 @@ export default function AttendancePage() {
   const toast = useToast();
   const [editing, setEditing] = useState<Boxer | null>(null);
 
-  const rows = profile?.role === 'coach' ? boxers : boxers.filter((b) => b.id === profile?.uid);
+  const isCoach = profile?.role === 'coach' || profile?.role === 'admin';
+  const rows = isCoach ? boxers : boxers.filter((b) => b.id === profile?.uid);
 
   return (
     <AppShell>
       <div className="mb-1 text-[12.5px] text-[var(--text-dim)]">Attendance</div>
       <h1 className="font-display mb-5 text-[23px] font-bold tracking-tight">
-        {profile?.role === 'coach' ? 'Attendance Log' : 'My Attendance'}
+        {isCoach ? 'Attendance Log' : 'My Attendance'}
       </h1>
 
       <div className="card overflow-x-auto">
@@ -52,7 +53,7 @@ export default function AttendancePage() {
                 <th className="px-3 py-2.5">Check-in</th>
                 <th className="px-3 py-2.5">Check-out</th>
                 <th className="px-3 py-2.5">Goal</th>
-                {profile?.role === 'coach' && <th className="px-3 py-2.5" />}
+                {isCoach && <th className="px-3 py-2.5" />}
               </tr>
             </thead>
             <tbody>
@@ -72,7 +73,7 @@ export default function AttendancePage() {
                   <td className="px-3 py-3">{b.checkInTime || '—'}</td>
                   <td className="px-3 py-3">{b.checkOutTime || '—'}</td>
                   <td className="max-w-[220px] px-3 py-3 text-xs text-[var(--text-dim)]">{b.goal || '—'}</td>
-                  {profile?.role === 'coach' && (
+                  {isCoach && (
                     <td className="px-3 py-3">
                       <button
                         onClick={() => setEditing(b)}

@@ -18,6 +18,7 @@ interface AuthContextValue {
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -72,8 +73,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
   }
 
+  async function refreshProfile() {
+    const current = profile;
+    if (!current?.uid) return;
+    try {
+      const snap = await getDoc(doc(db, 'users', current.uid));
+      if (snap.exists()) {
+        setProfile({ uid: current.uid, ...(snap.data() as Omit<UserProfile, 'uid'>) });
+      }
+    } catch (e) {
+      console.error('refreshProfile error:', e);
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ firebaseUser, profile, loading, error, signIn, signOut }}>
+    <AuthContext.Provider value={{ firebaseUser, profile, loading, error, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

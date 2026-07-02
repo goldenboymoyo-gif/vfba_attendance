@@ -16,18 +16,35 @@ export default function BoxerDashboard() {
   const toast = useToast();
   const [goal, setGoal] = useState('');
   const [busy, setBusy] = useState(false);
-  const [creating, setCreating] = useState(false);
 
-  let me = boxers.find((b) => b.id === profile?.uid);
+  const boxerDoc = boxers.find((b) => b.id === profile?.uid);
   const canCheckin = checkInStatus();
 
-  useEffect(() => {
-    if (me?.goal) setGoal(me.goal);
-  }, [me?.goal]);
+  // Build a stable me object from either the boxer doc or the user profile
+  const me = boxerDoc || (profile?.role === 'boxer' ? {
+    id: profile.uid,
+    name: profile.name,
+    phone: profile.phone || '',
+    status: 'absent' as const,
+    checkInTime: null,
+    checkOutTime: null,
+    streak: 0,
+    attendancePct: 0,
+    goal: '',
+    regNo: '',
+    age: 0,
+    gender: '',
+    weightClass: '',
+    emergencyContact: '',
+    joined: new Date().toISOString().slice(0, 10),
+    coachId: '',
+    medicalNotes: '',
+    achievements: [],
+  } : null);
 
+  // Auto-create the Firestore boxer doc in the background if missing
   useEffect(() => {
-    if (!loading && !me && profile?.role === 'boxer' && !creating) {
-      setCreating(true);
+    if (!loading && !boxerDoc && profile?.role === 'boxer') {
       setDoc(doc(db, 'boxers', profile.uid), {
         name: profile.name,
         phone: profile.phone || '',
@@ -46,14 +63,15 @@ export default function BoxerDashboard() {
         coachId: '',
         medicalNotes: '',
         achievements: [],
-      }).catch((e) => {
-        console.error('Failed to create boxer record:', e);
-        toast('Could not create your boxer profile. Contact your coach.', false);
-      });
+      }).catch((e) => console.error('Failed to create boxer record:', e));
     }
-  }, [loading, me, profile, creating, toast]);
+  }, [loading, boxerDoc, profile]);
 
-  if (loading || (creating && !me)) {
+  useEffect(() => {
+    if (me?.goal) setGoal(me.goal);
+  }, [me?.goal]);
+
+  if (loading) {
     return (
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="skeleton h-[260px]" />

@@ -23,7 +23,7 @@ export default function BoxersPage() {
   const [removing, setRemoving] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile && profile.role !== 'coach') router.replace('/dashboard');
+    if (profile && profile.role !== 'coach' && profile.role !== 'admin') router.replace('/dashboard');
   }, [profile, router]);
 
   async function handleDelete(uid: string, name: string) {

@@ -38,7 +38,7 @@ function resizeImage(file: File, maxDim: number): Promise<string> {
 }
 
 export default function SettingsPage() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { theme, setTheme } = useTheme();
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -107,6 +107,7 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       await updateDoc(doc(db, 'users', profile.uid), { name: name.trim(), phone: phone.trim() });
+      await refreshProfile();
       toast('Profile updated.');
     } catch (e) {
       console.error('handleSave error (profile.uid=' + profile.uid + '):', e);

@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { addDoc, collection, doc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { AttendanceStatus, NotificationPriority, NotificationType } from '@/lib/types';
 
@@ -28,6 +28,18 @@ export function checkInStatus(): { allowed: boolean; message: string } {
   return { allowed: true, message: '' };
 }
 
+async function upsertBoxer(docRef: any, data: Record<string, any>) {
+  try {
+    await updateDoc(docRef, data);
+  } catch (e: any) {
+    if (e?.code === 'not-found') {
+      await setDoc(docRef, data);
+    } else {
+      throw e;
+    }
+  }
+}
+
 /** Boxer checks in. Updates their live status AND writes a permanent log row. */
 export async function checkIn(boxerId: string, boxerName: string, goal: string) {
   const status = checkInStatus();
@@ -35,8 +47,8 @@ export async function checkIn(boxerId: string, boxerName: string, goal: string) 
     throw new Error(status.message);
   }
   const time = nowTime();
-  await updateDoc(doc(db, 'boxers', boxerId), {
-    status: 'in',
+  await upsertBoxer(doc(db, 'boxers', boxerId), {
+    status: 'in' as const,
     checkInTime: time,
     checkOutTime: null,
     goal,
@@ -56,8 +68,8 @@ export async function checkIn(boxerId: string, boxerName: string, goal: string) 
 /** Boxer checks out. Updates the same day's log with the checkout time. */
 export async function checkOut(boxerId: string) {
   const time = nowTime();
-  await updateDoc(doc(db, 'boxers', boxerId), {
-    status: 'out',
+  await upsertBoxer(doc(db, 'boxers', boxerId), {
+    status: 'out' as const,
     checkOutTime: time,
   });
   await addDoc(collection(db, 'attendanceLogs'), {
@@ -71,7 +83,7 @@ export async function checkOut(boxerId: string) {
 
 /** Boxer saves today's training goal without checking in. */
 export async function saveGoal(boxerId: string, goal: string) {
-  await updateDoc(doc(db, 'boxers', boxerId), { goal });
+  await upsertBoxer(doc(db, 'boxers', boxerId), { goal });
 }
 
 /** Coach manually corrects a boxer's status (edit/approve attendance). */
@@ -87,7 +99,7 @@ export async function setBoxerStatus(boxerId: string, boxerName: string, status:
   if (coachNotes) {
     updates.coachNotes = coachNotes;
   }
-  await updateDoc(doc(db, 'boxers', boxerId), updates);
+  await upsertBoxer(doc(db, 'boxers', boxerId), updates);
   await addDoc(collection(db, 'attendanceLogs'), {
     boxerId,
     boxerName,
