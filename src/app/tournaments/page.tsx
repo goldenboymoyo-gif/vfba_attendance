@@ -77,12 +77,12 @@ export default function TournamentsPage() {
         {tournaments.map((t) => {
           const confirmed = profile ? t.confirmedBoxerIds?.includes(profile.uid) : false;
           return (
-            <div key={t.id} className="card bg-gradient-to-br from-red to-red-dark text-white relative">
+            <div key={t.id} className="card border-l-[6px] border-l-red relative">
               {isCoachOrAdmin && (
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDelete(t); }}
                   disabled={deleting === t.id}
-                  className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 hover:bg-white/30 disabled:opacity-40"
+                  className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg border bg-[var(--surface)] text-[var(--text-dim)] hover:bg-red hover:text-white disabled:opacity-40"
                   title="Delete tournament"
                 >
                   <Trash2 size={14} />
@@ -90,22 +90,22 @@ export default function TournamentsPage() {
               )}
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <span className="rounded-lg bg-white/15 px-2.5 py-1 text-xs font-semibold">Upcoming</span>
+                  <span className="rounded-lg bg-red/10 px-2.5 py-1 text-xs font-semibold text-red">Upcoming</span>
                   <h2 className="mt-2.5 text-xl font-bold">{t.name}</h2>
-                  <div className="mt-1.5 text-[13.5px] opacity-90">
+                  <div className="mt-1.5 text-[13.5px] text-[var(--text-dim)]">
                     {t.venue} &middot; {t.date} &middot; {t.time}
                   </div>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {t.weightClasses?.map((c) => (
-                      <span key={c} className="rounded-lg bg-white/15 px-2.5 py-1 text-xs font-semibold">
+                      <span key={c} className="rounded-lg bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold">
                         {c}
                       </span>
                     ))}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="font-display text-[42px] font-extrabold leading-none">{daysUntil(t.date)}</div>
-                  <div className="text-[11px] opacity-85">DAYS TO GO</div>
+                  <div className="font-display text-[42px] font-extrabold leading-none text-red">{daysUntil(t.date)}</div>
+                  <div className="text-[11px] text-[var(--text-dim)]">DAYS TO GO</div>
                 </div>
               </div>
               {profile?.role === 'boxer' && (
@@ -115,7 +115,7 @@ export default function TournamentsPage() {
                     await confirmTournament(t.id, profile.uid);
                     toast('Attendance confirmed.');
                   }}
-                  className="mt-4 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
+                  className="mt-4 rounded-xl bg-red px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-dark disabled:opacity-60"
                 >
                   {confirmed ? 'Attendance confirmed' : 'Confirm My Attendance'}
                 </button>
