@@ -8,6 +8,7 @@ export interface UserProfile {
   email: string;
   role: Role;
   phone?: string;
+  photoURL?: string;
 }
 
 export interface Boxer {

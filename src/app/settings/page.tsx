@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useTheme } from 'next-themes';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
@@ -38,45 +38,25 @@ function resizeImage(file: File, maxDim: number): Promise<string> {
 }
 
 export default function SettingsPage() {
-  const { profile, refreshProfile } = useAuth();
+  const { profile } = useAuth();
   const { theme, setTheme } = useTheme();
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [photoURL, setPhotoURL] = useState('');
+  const [name, setName] = useState(profile?.name || '');
+  const [phone, setPhone] = useState(profile?.phone || '');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    if (profile) {
-      setName(profile.name);
-      setPhone(profile.phone || '');
-      loadPhoto();
-    }
-  }, [profile]);
-
-  async function loadPhoto() {
-    if (!profile) return;
-    try {
-      const snap = await getDoc(doc(db, 'users', profile.uid));
-      const data = snap.data();
-      if (data?.photoURL) setPhotoURL(data.photoURL);
-    } catch (e) {
-      console.error('loadPhoto error:', e);
-    }
-  }
+  const photoURL = profile?.photoURL || '';
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !profile) { console.error('handlePhotoUpload: no file or profile'); return; }
-    if (!profile.uid) { console.error('handlePhotoUpload: missing uid', profile); return; }
+    if (!file || !profile) return;
     setUploading(true);
     try {
       const dataUrl = await resizeImage(file, 400);
       await updateDoc(doc(db, 'users', profile.uid), { photoURL: dataUrl });
-      setPhotoURL(dataUrl);
       toast('Profile photo updated.');
     } catch (e) {
       console.error('handlePhotoUpload error:', e);
@@ -87,11 +67,9 @@ export default function SettingsPage() {
   }
 
   async function handleRemovePhoto() {
-    if (!profile) { console.error('handleRemovePhoto: no profile'); return; }
-    if (!profile.uid) { console.error('handleRemovePhoto: missing uid', profile); return; }
+    if (!profile) return;
     try {
       await updateDoc(doc(db, 'users', profile.uid), { photoURL: '' });
-      setPhotoURL('');
       toast('Profile photo removed.');
     } catch (e) {
       console.error('handleRemovePhoto error:', e);
@@ -101,20 +79,16 @@ export default function SettingsPage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!profile) { console.error('handleSave: no profile'); return; }
-    if (!name.trim()) { toast('Name is required.', false); return; }
-    if (!profile.uid) { console.error('handleSave: missing uid', profile); return; }
+    if (!profile) return;
     const trimmedName = name.trim();
     const trimmedPhone = phone.trim();
+    if (!trimmedName) { toast('Name is required.', false); return; }
     setSaving(true);
     try {
       await updateDoc(doc(db, 'users', profile.uid), { name: trimmedName, phone: trimmedPhone });
-      await refreshProfile();
-      setName(trimmedName);
-      setPhone(trimmedPhone);
       toast('Profile updated.');
     } catch (e) {
-      console.error('handleSave error (profile.uid=' + profile.uid + '):', e);
+      console.error('handleSave error:', e);
       toast('Failed to save profile. Check console (F12) for details.', false);
     } finally {
       setSaving(false);
@@ -141,7 +115,7 @@ export default function SettingsPage() {
               <div className="min-w-0">
                 <div className="truncate font-bold">{profile.name}</div>
                 <div className="truncate text-xs text-[var(--text-dim)]">
-                  {profile.role === 'admin' ? 'Admin' : profile.role === 'coach' ? 'Head Coach' : 'Boxer'} · {profile.email}
+                  {profile.role === 'admin' ? 'Admin' : profile.role === 'coach' ? 'Head Coach' : 'Boxer'} &middot; {profile.email}
                 </div>
               </div>
             </div>
