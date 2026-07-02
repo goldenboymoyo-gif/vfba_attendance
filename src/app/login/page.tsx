@@ -40,7 +40,7 @@ export default function LoginPage() {
     >
       <div className="grid w-full max-w-[960px] grid-cols-1 overflow-hidden rounded-[26px] border shadow-lg2 md:grid-cols-[1.05fr_1fr]">
         <div
-          className="relative flex flex-col justify-between overflow-hidden p-8 text-white md:p-11"
+          className="relative flex flex-col justify-between overflow-hidden p-5 text-white md:p-11"
           style={{
             background: 'linear-gradient(145deg, #7D171A 0%, #A61E22 40%, #8B1A1E 100%)',
           }}
@@ -54,22 +54,20 @@ export default function LoginPage() {
               backgroundSize: '40px 40px',
             }}
           />
-          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full border-[40px] border-white/5" />
-          <div className="pointer-events-none absolute -bottom-20 -left-20 h-48 w-48 rounded-full border-[30px] border-white/5" />
 
           <div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 md:gap-4">
               <div className="relative">
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md" />
-                <img src="/logo.png" alt="VFBA" className="relative h-16 w-16 rounded-full border-2 border-white/30 shadow-xl sm:h-[70px] sm:w-[70px]" />
+                <img src="/logo.png" alt="VFBA" className="relative h-12 w-12 rounded-full border-2 border-white/30 shadow-xl sm:h-[70px] sm:w-[70px]" />
               </div>
               <div>
-                <div className="font-display text-xl font-extrabold leading-tight tracking-tight sm:text-2xl">
+                <div className="font-display text-base font-extrabold leading-tight tracking-tight sm:text-2xl">
                   Victoria Falls
                   <br />
                   Boxing Academy
                 </div>
-                <div className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-white/60 sm:text-[11px]">
+                <div className="mt-0.5 flex items-center gap-2 text-[9px] uppercase tracking-[0.22em] text-white/60 sm:text-[11px]">
                   <span className="h-px w-4 bg-white/30" />
                   Est. 2013
                 </div>
@@ -77,20 +75,20 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="relative my-8 sm:my-12">
+          <div className="relative my-4 sm:my-12">
             <div className="mb-1 h-1 w-12 rounded-full bg-gold" />
-            <h2 className="mt-3 font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+            <h2 className="mt-2 font-display text-xl font-extrabold leading-tight tracking-tight sm:text-4xl">
               Discipline is tracked
               <br />
               one session at a time.
             </h2>
-            <p className="mt-3 max-w-[320px] text-sm leading-relaxed text-white/75 sm:text-[15px]">
+            <p className="mt-2 max-w-[320px] text-xs leading-relaxed text-white/75 sm:text-[15px]">
               Check in, log your goal, and let your coach see the whole gym in real time.
             </p>
           </div>
 
-          <div className="relative flex items-center justify-between border-t border-white/10 pt-5">
-            <div className="flex gap-6 text-[11px] text-white/50 sm:text-xs">
+          <div className="relative hidden items-center justify-between border-t border-white/10 pt-5 sm:flex">
+            <div className="flex gap-6 text-xs text-white/50">
               <div>
                 <span className="font-bold text-white/80">150+</span>
                 <span className="ml-1">Boxers</span>
@@ -100,7 +98,7 @@ export default function LoginPage() {
                 <span className="ml-1">Legacy</span>
               </div>
             </div>
-            <div className="text-[10px] text-white/40 sm:text-[11px]">Victoria Falls, Zimbabwe</div>
+            <div className="text-[11px] text-white/40">Victoria Falls, Zimbabwe</div>
           </div>
         </div>
 

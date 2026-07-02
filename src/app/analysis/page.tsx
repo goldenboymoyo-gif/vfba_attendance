@@ -133,15 +133,15 @@ export default function AnalysisPage() {
   return (
     <AppShell>
       <div className="mb-1 text-[12.5px] text-[var(--text-dim)]">Analysis</div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="font-display text-[23px] font-bold tracking-tight">Attendance Analysis</h1>
-        <div className="flex items-center gap-2">
-          <div className="text-sm text-[var(--text-dim)] mr-2">Range:</div>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h1 className="font-display text-xl font-bold tracking-tight sm:text-[23px]">Attendance Analysis</h1>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-[var(--text-dim)] sm:text-sm">Range:</span>
           {[7, 14, 30].map((d) => (
             <button
               key={d}
               onClick={() => setDaysRange(d)}
-              className={`rounded-full px-3 py-1 text-sm font-semibold ${daysRange === d ? 'bg-red text-white' : 'bg-[var(--surface-2)] text-[var(--text-dim)]'}`}
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold sm:px-3 sm:text-sm ${daysRange === d ? 'bg-red text-white' : 'bg-[var(--surface-2)] text-[var(--text-dim)]'}`}
             >
               {d}d
             </button>
