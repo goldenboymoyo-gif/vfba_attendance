@@ -41,7 +41,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         // Boxers
         const bSnap = await getDocs(qf(collection(db, 'boxers'), orderBy('name'), limitQ(100)));
         const bx: any[] = [];
-        bSnap.forEach((d) => {
+        bSnap.forEach((d: any) => {
           const data: any = { id: d.id, ...(d.data() as any) };
           const hay = `${data.name || ''} ${data.regNo || ''} ${data.phone || ''} ${data.weightClass || ''}`.toLowerCase();
           if (hay.includes(q)) bx.push(data);
@@ -50,7 +50,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         // Tournaments
         const tSnap = await getDocs(qf(collection(db, 'tournaments'), orderBy('name'), limitQ(50)));
         const ts: any[] = [];
-        tSnap.forEach((d) => {
+        tSnap.forEach((d: any) => {
           const data: any = { id: d.id, ...(d.data() as any) };
           const hay = `${data.name || ''} ${data.venue || ''} ${data.notes || ''}`.toLowerCase();
           if (hay.includes(q)) ts.push(data);
@@ -59,7 +59,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         // Attendance logs (recent)
         const lSnap = await getDocs(qf(collection(db, 'attendanceLogs'), orderBy('createdAt'), limitQ(300)));
         const ls: any[] = [];
-        lSnap.forEach((d) => {
+        lSnap.forEach((d: any) => {
           const data: any = { id: d.id, ...(d.data() as any) };
           const hay = `${data.boxerName || ''} ${data.date || ''} ${data.status || ''}`.toLowerCase();
           if (hay.includes(q)) ls.push(data);
