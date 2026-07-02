@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useBoxers } from '@/hooks/useBoxers';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -14,15 +16,44 @@ export default function BoxerDashboard() {
   const toast = useToast();
   const [goal, setGoal] = useState('');
   const [busy, setBusy] = useState(false);
+  const [creating, setCreating] = useState(false);
 
-  const me = boxers.find((b) => b.id === profile?.uid);
+  let me = boxers.find((b) => b.id === profile?.uid);
   const canCheckin = checkInStatus();
 
   useEffect(() => {
     if (me?.goal) setGoal(me.goal);
   }, [me?.goal]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && !me && profile?.role === 'boxer' && !creating) {
+      setCreating(true);
+      setDoc(doc(db, 'boxers', profile.uid), {
+        name: profile.name,
+        phone: profile.phone || '',
+        status: 'absent',
+        checkInTime: null,
+        checkOutTime: null,
+        streak: 0,
+        attendancePct: 0,
+        goal: '',
+        regNo: '',
+        age: 0,
+        gender: '',
+        weightClass: '',
+        emergencyContact: '',
+        joined: new Date().toISOString().slice(0, 10),
+        coachId: '',
+        medicalNotes: '',
+        achievements: [],
+      }).catch((e) => {
+        console.error('Failed to create boxer record:', e);
+        toast('Could not create your boxer profile. Contact your coach.', false);
+      });
+    }
+  }, [loading, me, profile, creating, toast]);
+
+  if (loading || (creating && !me)) {
     return (
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="skeleton h-[260px]" />
@@ -39,10 +70,9 @@ export default function BoxerDashboard() {
         <h1 className="font-display mb-5 text-[23px] font-bold tracking-tight">Welcome, {profile?.name?.split(' ')[0] || 'Boxer'}</h1>
         <div className="card py-14 text-center">
           <div className="mb-3 text-3xl">🥊</div>
-          <div className="mb-2 text-lg font-bold">Your coach hasn&apos;t added you yet</div>
+          <div className="mb-2 text-lg font-bold">Setting up your profile…</div>
           <p className="mx-auto max-w-md text-sm text-[var(--text-dim)]">
-            Your account is created, but you&apos;re not on the roster yet. Your coach needs to add you
-            to the system. Please remind them to check the <strong>Boxers</strong> page and add you.
+            Please wait a moment while we get your dashboard ready.
           </p>
         </div>
       </div>
