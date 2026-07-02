@@ -104,10 +104,14 @@ export default function SettingsPage() {
     if (!profile) { console.error('handleSave: no profile'); return; }
     if (!name.trim()) { toast('Name is required.', false); return; }
     if (!profile.uid) { console.error('handleSave: missing uid', profile); return; }
+    const trimmedName = name.trim();
+    const trimmedPhone = phone.trim();
     setSaving(true);
     try {
-      await updateDoc(doc(db, 'users', profile.uid), { name: name.trim(), phone: phone.trim() });
+      await updateDoc(doc(db, 'users', profile.uid), { name: trimmedName, phone: trimmedPhone });
       await refreshProfile();
+      setName(trimmedName);
+      setPhone(trimmedPhone);
       toast('Profile updated.');
     } catch (e) {
       console.error('handleSave error (profile.uid=' + profile.uid + '):', e);

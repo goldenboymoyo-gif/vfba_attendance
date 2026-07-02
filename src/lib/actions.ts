@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { addDoc, collection, doc, setDoc, updateDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { AttendanceStatus, NotificationPriority, NotificationType } from '@/lib/types';
 
@@ -125,6 +125,33 @@ export async function sendNotification(params: {
     ...params,
     createdAt: Date.now(),
   });
+}
+
+/** Coach creates a new tournament. */
+export async function createTournament(data: {
+  name: string;
+  venue: string;
+  date: string;
+  time: string;
+  weightClasses: string[];
+  notes?: string;
+}) {
+  await addDoc(collection(db, 'tournaments'), {
+    ...data,
+    selectedBoxerIds: [],
+    confirmedBoxerIds: [],
+    createdAt: Date.now(),
+  });
+}
+
+/** Coach deletes a tournament. */
+export async function deleteTournament(tournamentId: string) {
+  await deleteDoc(doc(db, 'tournaments', tournamentId));
+}
+
+/** Coach deletes a notification. */
+export async function deleteNotification(notificationId: string) {
+  await deleteDoc(doc(db, 'notifications', notificationId));
 }
 
 /** Boxer confirms attendance for an upcoming tournament. */

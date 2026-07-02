@@ -1,12 +1,12 @@
 'use client';
 
-import { CheckCircle2, Clock, XCircle, Users, Send } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Users, Send, X } from 'lucide-react';
 import { useBoxers } from '@/hooks/useBoxers';
 import { useAttendanceLogs } from '@/hooks/useAttendanceLogs';
 import { useNotifications } from '@/hooks/useNotifications';
 import { StatCard } from '@/components/StatCard';
 import { useState } from 'react';
-import { sendNotification } from '@/lib/actions';
+import { sendNotification, deleteNotification } from '@/lib/actions';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import type { NotificationPriority, NotificationType } from '@/lib/types';
@@ -75,12 +75,22 @@ export default function CoachDashboard() {
           <div className="mb-2.5 font-display text-[15px] font-bold">Notifications</div>
           {notifications.length === 0 && <div className="py-6 text-center text-sm text-[var(--text-dim)]">All caught up.</div>}
           {notifications.map((n) => (
-            <div key={n.id} className="flex items-start gap-3 border-b py-2.5 last:border-none">
+            <div key={n.id} className="flex items-start gap-3 border-b py-2.5 last:border-none group">
               <span className="rounded-md bg-[var(--surface-2)] px-2 py-1 text-[11px] font-semibold">{n.type}</span>
               <div className="flex-1">
                 <div className="text-[13px] font-semibold">{n.title}</div>
                 <div className="text-xs text-[var(--text-dim)]">{n.body}</div>
               </div>
+              <button
+                onClick={async () => {
+                  await deleteNotification(n.id);
+                  toast('Notification deleted.');
+                }}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border hover:bg-red hover:text-white"
+                title="Delete notification"
+              >
+                <X size={12} />
+              </button>
             </div>
           ))}
           <button
