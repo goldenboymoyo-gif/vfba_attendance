@@ -2,8 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { useTheme } from 'next-themes';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -37,6 +35,16 @@ function resizeImage(file: File, maxDim: number): Promise<string> {
   });
 }
 
+async function apiUpdateProfile(uid: string, data: Record<string, any>) {
+  const res = await fetch('/api/profile', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uid, ...data }),
+  });
+  if (!res.ok) throw new Error((await res.json()).error || 'Failed to update profile.');
+  return res.json();
+}
+
 export default function SettingsPage() {
   const { profile } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -56,11 +64,11 @@ export default function SettingsPage() {
     setUploading(true);
     try {
       const dataUrl = await resizeImage(file, 400);
-      await updateDoc(doc(db, 'users', profile.uid), { photoURL: dataUrl });
+      await apiUpdateProfile(profile.uid, { photoURL: dataUrl });
       toast('Profile photo updated.');
-    } catch (e) {
+    } catch (e: any) {
       console.error('handlePhotoUpload error:', e);
-      toast('Failed to upload photo. Check console (F12) for details.', false);
+      toast(e.message || 'Failed to upload photo.', false);
     } finally {
       setUploading(false);
     }
@@ -69,11 +77,11 @@ export default function SettingsPage() {
   async function handleRemovePhoto() {
     if (!profile) return;
     try {
-      await updateDoc(doc(db, 'users', profile.uid), { photoURL: '' });
+      await apiUpdateProfile(profile.uid, { photoURL: '' });
       toast('Profile photo removed.');
-    } catch (e) {
+    } catch (e: any) {
       console.error('handleRemovePhoto error:', e);
-      toast('Failed to remove photo. Check console (F12) for details.', false);
+      toast(e.message || 'Failed to remove photo.', false);
     }
   }
 
@@ -85,11 +93,11 @@ export default function SettingsPage() {
     if (!trimmedName) { toast('Name is required.', false); return; }
     setSaving(true);
     try {
-      await updateDoc(doc(db, 'users', profile.uid), { name: trimmedName, phone: trimmedPhone });
+      await apiUpdateProfile(profile.uid, { name: trimmedName, phone: trimmedPhone });
       toast('Profile updated.');
-    } catch (e) {
+    } catch (e: any) {
       console.error('handleSave error:', e);
-      toast('Failed to save profile. Check console (F12) for details.', false);
+      toast(e.message || 'Failed to save profile.', false);
     } finally {
       setSaving(false);
     }
