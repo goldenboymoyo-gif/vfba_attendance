@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 
 type RegisterRole = 'boxer' | 'coach';
 
@@ -17,47 +18,81 @@ export default function RegisterPage() {
   const [role, setRole] = useState<RegisterRole>('boxer');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const uidRef = useRef<string | null>(null);
+
+  async function createProfileFallback(uid: string) {
+    const userRole = role === 'coach' ? 'coach' : 'boxer';
+    // Firestore rules allow users to write their own users/{uid} doc
+    await setDoc(doc(db, 'users', uid), {
+      name,
+      email,
+      role: userRole,
+      phone: phone || '',
+    });
+    // Boxers doc will be auto-created by BoxerDashboard if missing
+    console.log('Profile created via client fallback for', uid);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+
     try {
+      // Step 1: Create Firebase Auth user
       const cred = await createUserWithEmailAndPassword(auth, email, password);
-      // Ensure server-side records exist using the admin API. This uses the
-      // admin SDK to write `users` and `boxers` documents so admins see new
-      // signups reliably (avoids client-side rules/race issues).
-      if (role === 'boxer') {
+      uidRef.current = cred.user.uid;
+
+      // Step 2: Create Firestore profile via admin API
+      let apiOk = false;
+      try {
+        const body = role === 'boxer'
+          ? {
+              role: 'boxer',
+              name,
+              email,
+              regNo: '',
+              age: 0,
+              gender: '',
+              weightClass: '',
+              phone: phone || '',
+              emergencyContact: '',
+              medicalNotes: '',
+              coachId: '',
+            }
+          : { role: 'coach', name, email, phone: phone || '' };
+
         const res = await fetch('/api/boxers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            role: 'boxer',
-            name,
-            email,
-            regNo: '',
-            age: 0,
-            gender: '',
-            weightClass: '',
-            phone: phone || '',
-            emergencyContact: '',
-            medicalNotes: '',
-            coachId: '',
-          }),
+          body: JSON.stringify(body),
         });
-        const data = await res.json();
-        if (!res.ok) {
-          console.error('Failed to create boxer via admin API', data);
-          throw new Error(data.error || 'Failed to create boxer record.');
+
+        if (res.ok) {
+          apiOk = true;
+        } else {
+          const data = await res.json();
+          console.warn('Admin API failed, trying client fallback:', data.error);
         }
-      } else {
-        // For coaches, request the admin API to create a coach users doc.
-        await fetch('/api/boxers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ role: 'coach', name, email, phone: phone || '' }),
-        });
+      } catch (fetchErr) {
+        console.warn('Admin API network error, trying client fallback:', fetchErr);
       }
+
+      // Step 3: Fallback if API failed — write Firestore docs from the client
+      if (!apiOk) {
+        try {
+          await createProfileFallback(cred.user.uid);
+        } catch (fallbackErr) {
+          console.error('Client fallback also failed:', fallbackErr);
+          setError(
+            'Account created but profile setup failed. ' +
+            'Please try signing in — if it hangs, contact the admin to fix your account.'
+          );
+          setSubmitting(false);
+          return;
+        }
+      }
+
       router.replace('/dashboard');
     } catch (e: any) {
       if (e?.code === 'auth/email-already-in-use') {

@@ -52,8 +52,20 @@ export async function POST(req: Request) {
       const existing = await adminAuth.getUserByEmail(email);
       uid = existing.uid;
     } catch {
-      const user = await adminAuth.createUser({ email, password: defaultPassword, displayName: name });
-      uid = user.uid;
+      // Race condition: client may have just created the Auth user but it
+      // hasn't propagated to the Admin SDK yet. Retry once after a short
+      // delay before creating a duplicate.
+      let existing;
+      try {
+        await new Promise((r) => setTimeout(r, 1500));
+        existing = await adminAuth.getUserByEmail(email);
+        uid = existing.uid;
+      } catch {
+        // User truly doesn't exist — create them with a default password so
+        // the admin can also use this endpoint to add boxers directly.
+        const user = await adminAuth.createUser({ email, password: defaultPassword, displayName: name });
+        uid = user.uid;
+      }
     }
 
     // Create/update the users profile with correct role
