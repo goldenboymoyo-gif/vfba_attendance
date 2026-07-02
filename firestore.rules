@@ -1,0 +1,71 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function myRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && myRole() == 'admin';
+    }
+
+    function isCoach() {
+      return isSignedIn() && (myRole() == 'coach' || myRole() == 'admin');
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Each user's own profile. Admin can read/write all profiles.
+    // Users may create their own profile once during self-registration.
+    // Users may update their own profile (name, phone, photo).
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isCoach();
+      allow create: if isOwner(uid);
+      allow update: if isAdmin() || isOwner(uid);
+      allow delete: if isAdmin();
+    }
+
+    // The boxer roster + live status. Boxers can update ONLY their own
+    // check-in/out/goal fields; coaches can read and write everything.
+    match /boxers/{boxerId} {
+      allow read: if isSignedIn();
+      allow update: if isCoach() ||
+        (isOwner(boxerId) &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'checkInTime', 'checkOutTime', 'goal']));
+      allow create, delete: if isCoach();
+    }
+
+    // Permanent attendance history.
+    match /attendanceLogs/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        (isCoach() || request.resource.data.boxerId == request.auth.uid);
+      allow update, delete: if isCoach();
+    }
+
+    // Notifications are broadcast by coaches, read by everyone.
+    match /notifications/{notifId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isCoach();
+    }
+
+    // Tournaments: coaches manage them; boxers may only add themselves to
+    // confirmedBoxerIds.
+    match /tournaments/{tId} {
+      allow read: if isSignedIn();
+      allow create, delete: if isCoach();
+      allow update: if isCoach() ||
+        (isSignedIn() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confirmedBoxerIds']));
+    }
+  }
+}

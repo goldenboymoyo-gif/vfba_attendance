@@ -1,0 +1,155 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useBoxers } from '@/hooks/useBoxers';
+import { useNotifications } from '@/hooks/useNotifications';
+import { checkIn, checkOut, saveGoal, checkInStatus } from '@/lib/actions';
+import { useToast } from '@/context/ToastContext';
+
+export default function BoxerDashboard() {
+  const { profile } = useAuth();
+  const { boxers, loading } = useBoxers();
+  const { notifications } = useNotifications(3);
+  const toast = useToast();
+  const [goal, setGoal] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const me = boxers.find((b) => b.id === profile?.uid);
+  const canCheckin = checkInStatus();
+
+  useEffect(() => {
+    if (me?.goal) setGoal(me.goal);
+  }, [me?.goal]);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="skeleton h-[260px]" />
+        <div className="skeleton h-[260px]" />
+        <div className="skeleton h-[260px]" />
+      </div>
+    );
+  }
+
+  if (!me) {
+    return (
+      <div>
+        <div className="mb-1 text-[12.5px] text-[var(--text-dim)]">Dashboard</div>
+        <h1 className="font-display mb-5 text-[23px] font-bold tracking-tight">Welcome, {profile?.name?.split(' ')[0] || 'Boxer'}</h1>
+        <div className="card py-14 text-center">
+          <div className="mb-3 text-3xl">🥊</div>
+          <div className="mb-2 text-lg font-bold">Your coach hasn&apos;t added you yet</div>
+          <p className="mx-auto max-w-md text-sm text-[var(--text-dim)]">
+            Your account is created, but you&apos;re not on the roster yet. Your coach needs to add you
+            to the system. Please remind them to check the <strong>Boxers</strong> page and add you.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const pct = me.attendancePct;
+
+  async function handleToggle() {
+    if (!canCheckin.allowed && me?.status !== 'in') {
+      toast(canCheckin.message, false);
+      return;
+    }
+    setBusy(true);
+    try {
+      if (me!.status === 'in') {
+        await checkOut(me!.id);
+        toast('Checked out. Duration logged.');
+      } else {
+        await checkIn(me!.id, me!.name, goal);
+        toast('Checked in. Have a great session.');
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast(e.message || 'Could not update your status — check your connection.', false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSaveGoal() {
+    try {
+      await saveGoal(me!.id, goal);
+      toast('Goal saved for today.');
+    } catch {
+      toast('Could not save your goal.', false);
+    }
+  }
+
+  const label = me.status === 'in' ? 'Check Out' : me.status === 'out' ? 'Complete' : 'Check In';
+  const checkinDisabled = me.status !== 'in' && !canCheckin.allowed;
+
+  return (
+    <div>
+      <div className="mb-1 text-[12.5px] text-[var(--text-dim)]">Dashboard</div>
+      <h1 className="font-display mb-5 text-[23px] font-bold tracking-tight">Welcome back, {me.name.split(' ')[0]}</h1>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="card text-center">
+          <div className="mb-2.5 text-left font-display text-[15px] font-bold">Today&apos;s Status</div>
+          <div
+            className="relative mx-auto my-3 flex h-[176px] w-[176px] items-center justify-center rounded-full"
+            style={{ background: `conic-gradient(#A61E22 ${pct}%, var(--surface-2) 0)` }}
+          >
+            <div className="absolute inset-[9px] rounded-full bg-[var(--surface)]" />
+            <button
+              onClick={handleToggle}
+              disabled={busy || me.status === 'out' || checkinDisabled}
+              className="relative z-10 h-[116px] w-[116px] rounded-full text-sm font-semibold text-white transition-transform hover:scale-[1.03] active:scale-95 disabled:opacity-70"
+              style={{ background: me.status === 'in' ? '#111111' : '#A61E22' }}
+            >
+              {busy ? '…' : label}
+            </button>
+          </div>
+          <span className="inline-block rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold">
+            {me.status === 'in' ? 'Checked In' : me.status === 'out' ? 'Checked Out' : me.status === 'late' ? 'Late' : 'Not arrived'}
+          </span>
+          {checkinDisabled && (
+            <div className="mt-2 text-xs text-[var(--text-dim)]">{canCheckin.message}</div>
+          )}
+        </div>
+
+        <div className="card">
+          <div className="mb-2.5 font-display text-[15px] font-bold">Today&apos;s Goal</div>
+          <textarea
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            rows={3}
+            placeholder="e.g. Improve footwork and defense…"
+            className="w-full rounded-xl border bg-[var(--surface-2)] px-3.5 py-3 text-sm outline-none focus:border-red"
+          />
+          <button onClick={handleSaveGoal} className="mt-2.5 rounded-xl bg-red px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-dark">
+            Save Goal
+          </button>
+          <div className="mt-4 border-t pt-3.5 text-sm">
+            <div className="flex justify-between py-1">
+              <span className="text-[var(--text-dim)]">Current Streak</span>
+              <strong>{me.streak} days</strong>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-[var(--text-dim)]">Attendance Rate</span>
+              <strong>{pct}%</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="mb-2.5 font-display text-[15px] font-bold">Coach Notifications</div>
+          {notifications.length === 0 && <div className="py-4 text-center text-sm text-[var(--text-dim)]">Nothing new.</div>}
+          {notifications.map((n) => (
+            <div key={n.id} className="border-b py-2.5 last:border-none">
+              <div className="text-[13px] font-semibold">{n.title}</div>
+              <div className="text-xs text-[var(--text-dim)]">{n.body}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

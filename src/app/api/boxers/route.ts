@@ -1,0 +1,92 @@
+import { NextResponse } from 'next/server';
+import { readFileSync } from 'fs';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
+
+function getAdminApp() {
+  if (getApps().length) return getApps()[0];
+  const serviceAccount = JSON.parse(
+    readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS || 'service-account.json', 'utf-8')
+  );
+  return initializeApp({ credential: cert(serviceAccount) });
+}
+
+const adminAuth = getAuth(getAdminApp());
+const adminDb = getFirestore(getAdminApp());
+
+export async function POST(req: Request) {
+  try {
+    const { name, email, regNo, age, gender, weightClass, phone, emergencyContact, medicalNotes, coachId } = await req.json();
+
+    if (!name || !email) {
+      return NextResponse.json({ error: 'Name and email are required.' }, { status: 400 });
+    }
+
+    const defaultPassword = 'VFBA2026!';
+
+    let uid;
+    try {
+      const existing = await adminAuth.getUserByEmail(email);
+      uid = existing.uid;
+    } catch {
+      const user = await adminAuth.createUser({ email, password: defaultPassword, displayName: name });
+      uid = user.uid;
+    }
+
+    await adminDb.doc(`users/${uid}`).set({
+      name,
+      email,
+      role: 'boxer',
+      phone: phone || '',
+    }, { merge: true });
+
+    await adminDb.doc(`boxers/${uid}`).set({
+      name,
+      regNo: regNo || '',
+      age: age || 0,
+      gender: gender || '',
+      weightClass: weightClass || '',
+      phone: phone || '',
+      emergencyContact: emergencyContact || '',
+      medicalNotes: medicalNotes || '',
+      joined: new Date().toISOString().slice(0, 10),
+      coachId: coachId || '',
+      status: 'absent',
+      checkInTime: null,
+      checkOutTime: null,
+      streak: 0,
+      attendancePct: 0,
+      goal: '',
+      achievements: [],
+    });
+
+    return NextResponse.json({ uid, email, defaultPassword });
+  } catch (e: any) {
+    console.error('POST /api/boxers error:', e);
+    return NextResponse.json({ error: e.message || 'Failed to create boxer.' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { uid } = await req.json();
+    if (!uid) {
+      return NextResponse.json({ error: 'Boxer UID is required.' }, { status: 400 });
+    }
+
+    await adminDb.doc(`boxers/${uid}`).delete();
+    await adminDb.doc(`users/${uid}`).delete();
+
+    try {
+      await adminAuth.deleteUser(uid);
+    } catch {
+      // auth user might not exist or already be deleted
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (e: any) {
+    console.error('DELETE /api/boxers error:', e);
+    return NextResponse.json({ error: e.message || 'Failed to delete boxer.' }, { status: 500 });
+  }
+}

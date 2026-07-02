@@ -1,0 +1,13 @@
+{
+  "name": "Victoria Falls Boxing Academy — Attendance System",
+  "short_name": "VFBA",
+  "description": "Real-time attendance and training management for VFBA coaches and boxers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F4EF",
+  "theme_color": "#A61E22",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
