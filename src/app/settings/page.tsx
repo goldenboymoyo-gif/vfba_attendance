@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
-import { storage } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { ref as storageRef, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { doc, updateDoc } from 'firebase/firestore';
 
 function initials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
@@ -38,14 +39,9 @@ function resizeImage(file: File, maxDim: number): Promise<string> {
   });
 }
 
-async function apiUpdateProfile(uid: string, data: Record<string, any>) {
-  const res = await fetch('/api/profile', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid, ...data }),
-  });
-  if (!res.ok) throw new Error((await res.json()).error || 'Failed to update profile.');
-  return res.json();
+async function updateProfileDoc(uid: string, data: Record<string, any>) {
+  const profileRef = doc(db, 'users', uid);
+  await updateDoc(profileRef, data);
 }
 
 export default function SettingsPage() {
@@ -61,6 +57,12 @@ export default function SettingsPage() {
 
   const photoURL = profile?.photoURL || '';
 
+  useEffect(() => {
+    if (!profile) return;
+    setName(profile.name || '');
+    setPhone(profile.phone || '');
+  }, [profile]);
+
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
@@ -73,14 +75,14 @@ export default function SettingsPage() {
         const imgRef = storageRef(storage, `profilePhotos/${profile.uid}.jpg`);
         await uploadString(imgRef, dataUrl, 'data_url');
         const downloadUrl = await getDownloadURL(imgRef);
-        await apiUpdateProfile(profile.uid, { photoURL: downloadUrl });
+        await updateProfileDoc(profile.uid, { photoURL: downloadUrl });
         await refreshProfile();
         toast('Profile photo uploaded.');
       } catch (e) {
         console.warn('Storage upload failed, falling back to Firestore:', e);
         // create a smaller fallback image to reduce Firestore storage size
         const fallbackDataUrl = await resizeImage(file, 240);
-        await apiUpdateProfile(profile.uid, { photoURL: fallbackDataUrl });
+        await updateProfileDoc(profile.uid, { photoURL: fallbackDataUrl });
         await refreshProfile();
         toast('Profile photo saved (fallback).');
       }
@@ -102,7 +104,7 @@ export default function SettingsPage() {
       } catch (e) {
         // ignore storage delete errors
       }
-      await apiUpdateProfile(profile.uid, { photoURL: '' });
+      await updateProfileDoc(profile.uid, { photoURL: '' });
       await refreshProfile();
       toast('Profile photo removed.');
     } catch (e: any) {
@@ -119,7 +121,7 @@ export default function SettingsPage() {
     if (!trimmedName) { toast('Name is required.', false); return; }
     setSaving(true);
     try {
-      await apiUpdateProfile(profile.uid, { name: trimmedName, phone: trimmedPhone });
+      await updateProfileDoc(profile.uid, { name: trimmedName, phone: trimmedPhone });
       await refreshProfile();
       setName(trimmedName);
       setPhone(trimmedPhone);
