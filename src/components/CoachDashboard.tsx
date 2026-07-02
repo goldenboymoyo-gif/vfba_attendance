@@ -1,11 +1,12 @@
 'use client';
 
-import { CheckCircle2, Clock, XCircle, Users, Send, X } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Users, Send, X, ArrowRight, BarChart3, CalendarDays } from 'lucide-react';
 import { useBoxers } from '@/hooks/useBoxers';
 import { useAttendanceLogs } from '@/hooks/useAttendanceLogs';
 import { useNotifications } from '@/hooks/useNotifications';
 import { StatCard } from '@/components/StatCard';
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { sendNotification, deleteNotification, autoCheckoutIfNeeded } from '@/lib/actions';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -65,7 +66,19 @@ export default function CoachDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="mb-4 flex flex-wrap gap-2">
+        <Link href="/attendance" className="rounded-full bg-[var(--surface-2)] px-3 py-1.5 text-sm font-semibold text-[var(--text-dim)] hover:bg-[var(--surface)]">
+          Attendance Log
+        </Link>
+        <Link href="/analysis" className="rounded-full bg-[var(--surface-2)] px-3 py-1.5 text-sm font-semibold text-[var(--text-dim)] hover:bg-[var(--surface)]">
+          Analysis
+        </Link>
+        <Link href="/boxers" className="rounded-full bg-[var(--surface-2)] px-3 py-1.5 text-sm font-semibold text-[var(--text-dim)] hover:bg-[var(--surface)]">
+          Boxer Roster
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="card">
           <div className="mb-2.5 flex items-center justify-between">
             <div className="font-display text-[15px] font-bold">Recent Check-ins</div>
@@ -87,7 +100,15 @@ export default function CoachDashboard() {
         </div>
 
         <div className="card">
-          <div className="mb-2.5 font-display text-[15px] font-bold">Notifications</div>
+          <div className="mb-2.5 flex items-center justify-between">
+            <div className="font-display text-[15px] font-bold">Notifications</div>
+            <button
+              onClick={() => setComposing(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-red px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-dark"
+            >
+              <Send size={12} /> Send
+            </button>
+          </div>
           {notifications.length === 0 && <div className="py-6 text-center text-sm text-[var(--text-dim)]">All caught up.</div>}
           {notifications.map((n) => (
             <div key={n.id} className="flex items-start gap-3 border-b py-2.5 last:border-none group">
@@ -108,12 +129,6 @@ export default function CoachDashboard() {
               </button>
             </div>
           ))}
-          <button
-            onClick={() => setComposing(true)}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-red py-2.5 text-sm font-semibold text-white hover:bg-red-dark"
-          >
-            <Send size={14} /> Send Notification
-          </button>
         </div>
       </div>
 

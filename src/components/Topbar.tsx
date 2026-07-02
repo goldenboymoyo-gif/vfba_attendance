@@ -80,12 +80,12 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
   const canDeleteNotif = profile?.role === 'coach' || profile?.role === 'admin';
 
   return (
-    <div className="sticky top-0 z-20 flex items-center justify-between border-b bg-[var(--bg)]/80 px-5 py-3.5 backdrop-blur-md md:px-7">
-      <div className="flex items-center gap-3">
+    <div className="sticky top-0 z-20 flex items-center justify-between border-b bg-[var(--bg)]/80 px-3.5 py-3 backdrop-blur-md sm:px-5 md:px-7">
+      <div className="flex items-center gap-2 sm:gap-3">
         <button onClick={onMenu} className="flex h-9 w-9 items-center justify-center rounded-[11px] border bg-[var(--surface)] lg:hidden">
           <Menu size={18} />
         </button>
-        <div className="hidden w-[320px] items-center gap-2 rounded-xl border bg-[var(--surface)] px-3.5 py-2.5 md:flex relative">
+        <div className="hidden w-[280px] items-center gap-2 rounded-xl border bg-[var(--surface)] px-3.5 py-2.5 lg:flex relative">
           <Search size={15} className="text-[var(--text-dim)]" />
           <input
             placeholder="Search boxers, tournaments, sessions…"
@@ -152,7 +152,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 sm:gap-2.5">
         {mounted && (
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
