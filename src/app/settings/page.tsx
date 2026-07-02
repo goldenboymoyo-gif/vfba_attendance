@@ -6,14 +6,14 @@ import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { db, storage } from '@/lib/firebase';
-import { ref as storageRef, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
 
 function initials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 }
 
-function resizeImage(file: File, maxDim: number): Promise<string> {
+function resizeImage(file: File, maxDim: number, quality = 0.7): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -31,11 +31,22 @@ function resizeImage(file: File, maxDim: number): Promise<string> {
       const ctx = canvas.getContext('2d');
       if (!ctx) { reject(new Error('Canvas context unavailable')); return; }
       ctx.drawImage(img, 0, 0, width, height);
-      // Use JPEG with reasonable quality to keep the base64 payload small
-      resolve(canvas.toDataURL('image/jpeg', 0.8));
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Canvas toBlob failed'));
+      }, 'image/jpeg', quality);
     };
     img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
     img.src = url;
+  });
+}
+
+function dataUrlFromBlob(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
   });
 }
 
