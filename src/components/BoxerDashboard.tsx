@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useBoxers } from '@/hooks/useBoxers';
@@ -44,10 +44,16 @@ export default function BoxerDashboard() {
     achievements: [],
   } : null);
 
-  // Auto-create the Firestore boxer doc in the background if missing
+  // Auto-create the Firestore boxer doc if it doesn't exist (uses getDoc so
+  // it never gets tricked by synthetic entries from the users collection).
   useEffect(() => {
-    if (!loading && !boxerDoc && profile?.role === 'boxer') {
-      setDoc(doc(db, 'boxers', profile.uid), {
+    if (!profile || profile.role !== 'boxer') return;
+    let cancelled = false;
+    const ref = doc(db, 'boxers', profile.uid);
+    getDoc(ref).then((snap) => {
+      if (cancelled) return;
+      if (snap.exists()) return;
+      setDoc(ref, {
         name: profile.name,
         phone: profile.phone || '',
         status: 'absent',
@@ -66,8 +72,9 @@ export default function BoxerDashboard() {
         medicalNotes: '',
         achievements: [],
       }).catch((e) => console.error('Failed to create boxer record:', e));
-    }
-  }, [loading, boxerDoc, profile]);
+    }).catch((e) => console.error('getDoc error:', e));
+    return () => { cancelled = true; };
+  }, [profile]);
 
   useEffect(() => {
     if (loading || autoChecked.current || !me || me.status !== 'in') return;
