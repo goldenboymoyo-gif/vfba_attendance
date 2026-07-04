@@ -72,12 +72,28 @@ export default function BoxerDashboard() {
   useEffect(() => {
     if (loading || autoChecked.current || !me || me.status !== 'in') return;
     const now = new Date().toTimeString().slice(0, 5);
-    if (now < '19:20') { autoChecked.current = true; return; }
+    if (now < '19:30') return;
     autoChecked.current = true;
     autoCheckoutIfNeeded(me.id, me.name).then((did) => {
-      if (did) toast('You were auto-checked out (training ended at 19:00).');
+      if (did) toast('You were auto-checked out (training ended at 19:30).');
     });
   }, [loading, me?.status]);
+
+  // Poll for auto-checkout every 30s (catches the case where page is open past 19:30)
+  useEffect(() => {
+    if (!me || me.status !== 'in' || autoChecked.current) return;
+    const id = setInterval(() => {
+      const now = new Date().toTimeString().slice(0, 5);
+      if (now >= '19:30' && !autoChecked.current) {
+        autoChecked.current = true;
+        autoCheckoutIfNeeded(me.id, me.name).then((did) => {
+          if (did) toast('You were auto-checked out (training ended at 19:30).');
+        });
+        clearInterval(id);
+      }
+    }, 30000);
+    return () => clearInterval(id);
+  }, [me]);
 
   useEffect(() => {
     if (me?.goal) setGoal(me.goal);

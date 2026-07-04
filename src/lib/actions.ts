@@ -11,7 +11,7 @@ function today() {
 
 const CHECK_IN_OPEN = '17:00';
 const CHECK_IN_CLOSE = '18:00';
-const AUTO_CHECKOUT_TIME = '19:20';
+const AUTO_CHECKOUT_TIME = '19:30';
 
 export function canCheckIn(): boolean {
   const now = nowTime();

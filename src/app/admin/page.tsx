@@ -7,7 +7,7 @@ import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/context/ToastContext';
-import { Trash2, Shield, Users, UserCheck, Search } from 'lucide-react';
+import { Trash2, Shield, Users, UserCheck, Search, Wrench } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
 import type { UserProfile } from '@/lib/types';
 
@@ -29,6 +29,7 @@ export default function AdminPage() {
   const [filter, setFilter] = useState<'all' | 'coach' | 'boxer'>('all');
   const [search, setSearch] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [repairing, setRepairing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,6 +59,20 @@ export default function AdminPage() {
       toast(e.message || 'Failed to delete user.', false);
     } finally {
       setDeleting(null);
+    }
+  }
+
+  async function handleRepairBoxers() {
+    if (!confirm('Create missing boxer records for all registered boxers?')) return;
+    setRepairing(true);
+    try {
+      const res = await fetch('/api/boxers/repair', { method: 'POST' });
+      if (!res.ok) throw new Error((await res.json()).error);
+      toast('Missing boxer records created.');
+    } catch (e: any) {
+      toast(e.message || 'Repair failed.', false);
+    } finally {
+      setRepairing(false);
     }
   }
 
@@ -104,6 +119,15 @@ export default function AdminPage() {
                     className="w-[180px] rounded-xl border bg-[var(--surface-2)] py-1.5 pl-8 pr-3 text-xs outline-none focus:border-red sm:w-[240px]"
                   />
                 </div>
+                <button
+                  onClick={handleRepairBoxers}
+                  disabled={repairing}
+                  className="flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold text-[var(--text-dim)] hover:bg-[var(--surface-2)] disabled:opacity-40"
+                  title="Create missing boxer records"
+                >
+                  <Wrench size={13} />
+                  {repairing ? 'Fixing…' : 'Repair'}
+                </button>
                 {(['all', 'coach', 'boxer'] as const).map((f) => (
                   <button
                     key={f}
