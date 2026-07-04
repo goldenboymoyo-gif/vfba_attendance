@@ -22,16 +22,15 @@ export default function RegisterPage() {
 
   async function createProfileFallback(uid: string) {
     const userRole = role === 'coach' ? 'coach' : 'boxer';
-    // Firestore rules allow users to write their own users/{uid} doc
     await setDoc(doc(db, 'users', uid), {
       name,
       email,
       role: userRole,
       phone: phone || '',
     });
-    // Create boxers doc too so they show up in the roster immediately
     if (userRole === 'boxer') {
-      await setDoc(doc(db, 'boxers', uid), {
+      // If this fails the dashboard auto-creates it later
+      setDoc(doc(db, 'boxers', uid), {
         name,
         regNo: '',
         age: 0,
@@ -49,9 +48,8 @@ export default function RegisterPage() {
         attendancePct: 0,
         goal: '',
         achievements: [],
-      });
+      }).catch((e) => console.error('Boxer doc creation failed (dashboard will auto-create):', e));
     }
-    console.log('Profile created via client fallback for', uid);
   }
 
   async function handleSubmit(e: React.FormEvent) {
