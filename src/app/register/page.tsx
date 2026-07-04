@@ -33,6 +33,14 @@ export default function RegisterPage() {
       email,
       role: userRole,
       phone: phone || '',
+      ...(userRole === 'boxer' && {
+        age: parseInt(age) || 0,
+        gender: gender || '',
+        weightClass: weightClass || '',
+        regNo: regNo || '',
+        emergencyContact: emergencyContact || '',
+        medicalNotes: medicalNotes || '',
+      }),
     });
     if (userRole === 'boxer') {
       const boxerData = {
