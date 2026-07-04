@@ -64,55 +64,8 @@ export default function RegisterPage() {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       uidRef.current = cred.user.uid;
 
-      // Step 2: Create Firestore profile via admin API
-      let apiOk = false;
-      try {
-        const body = role === 'boxer'
-          ? {
-              role: 'boxer',
-              name,
-              email,
-              regNo: '',
-              age: 0,
-              gender: '',
-              weightClass: '',
-              phone: phone || '',
-              emergencyContact: '',
-              medicalNotes: '',
-              coachId: '',
-            }
-          : { role: 'coach', name, email, phone: phone || '' };
-
-        const res = await fetch('/api/boxers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-
-        if (res.ok) {
-          apiOk = true;
-        } else {
-          const data = await res.json();
-          console.warn('Admin API failed, trying client fallback:', data.error);
-        }
-      } catch (fetchErr) {
-        console.warn('Admin API network error, trying client fallback:', fetchErr);
-      }
-
-      // Step 3: Fallback if API failed — write Firestore docs from the client
-      if (!apiOk) {
-        try {
-          await createProfileFallback(cred.user.uid);
-        } catch (fallbackErr) {
-          console.error('Client fallback also failed:', fallbackErr);
-          setError(
-            'Account created but profile setup failed. ' +
-            'Please try signing in — if it hangs, contact the admin to fix your account.'
-          );
-          setSubmitting(false);
-          return;
-        }
-      }
+      // Step 2: Write Firestore docs directly from client (bypasses broken Admin API)
+      await createProfileFallback(cred.user.uid);
 
       router.replace('/dashboard');
     } catch (e: any) {

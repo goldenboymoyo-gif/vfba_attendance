@@ -4,6 +4,8 @@ import { AppShell } from '@/components/AppShell';
 import { useBoxers } from '@/hooks/useBoxers';
 import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import type { Boxer } from '@/lib/types';
@@ -25,10 +27,10 @@ export default function BoxersPage() {
     if (!confirm(`Remove ${name} permanently? This cannot be undone.`)) return;
     setRemoving(uid);
     try {
-      const res = await fetch(`/api/boxers?uid=${encodeURIComponent(uid)}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error((await res.json()).error);
+      await deleteDoc(doc(db, 'boxers', uid));
+      await deleteDoc(doc(db, 'users', uid));
+      // Try to delete Auth user via API — if it fails, Firestore docs are still removed
+      fetch(`/api/boxers?uid=${encodeURIComponent(uid)}`, { method: 'DELETE' }).catch(() => {});
       toast(`${name} removed.`);
     } catch (e: any) {
       toast(e.message || 'Failed to remove boxer.', false);

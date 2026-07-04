@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
@@ -50,10 +50,10 @@ export default function AdminPage() {
     if (!confirm(`Permanently delete "${name}"? This removes their Auth account and all data.`)) return;
     setDeleting(uid);
     try {
-      const res = await fetch(`/api/boxers?uid=${encodeURIComponent(uid)}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error((await res.json()).error);
+      await deleteDoc(doc(db, 'boxers', uid));
+      await deleteDoc(doc(db, 'users', uid));
+      // Try to delete Auth user via API — if it fails, Firestore docs are still removed
+      fetch(`/api/boxers?uid=${encodeURIComponent(uid)}`, { method: 'DELETE' }).catch(() => {});
       toast(`${name} deleted. They can sign up again.`);
     } catch (e: any) {
       toast(e.message || 'Failed to delete user.', false);
