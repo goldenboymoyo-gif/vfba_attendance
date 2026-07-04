@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useTheme } from 'next-themes';
 import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -57,7 +56,6 @@ async function updateProfileDoc(uid: string, data: Record<string, any>) {
 
 export default function SettingsPage() {
   const { profile, refreshProfile } = useAuth();
-  const { theme, setTheme } = useTheme();
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -230,22 +228,13 @@ export default function SettingsPage() {
           )}
         </form>
 
-        <div className="card max-sm:!p-4">
-          <div className="mb-3 font-display text-sm font-bold sm:text-[15px]">Preferences</div>
-          <div className="flex items-center justify-between border-b py-2.5">
-            <span className="text-sm">Dark Mode</span>
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="rounded-lg bg-[var(--surface-2)] px-3 py-1.5 text-xs font-semibold"
-            >
-              Toggle
-            </button>
+          <div className="card max-sm:!p-4">
+            <div className="mb-3 font-display text-sm font-bold sm:text-[15px]">Preferences</div>
+            <div className="flex items-center justify-between py-2.5">
+              <label htmlFor="notifications" className="text-sm">Notifications</label>
+              <input id="notifications" name="notifications" type="checkbox" defaultChecked className="h-4 w-4" />
+            </div>
           </div>
-          <div className="flex items-center justify-between py-2.5">
-            <label htmlFor="notifications" className="text-sm">Notifications</label>
-            <input id="notifications" name="notifications" type="checkbox" defaultChecked className="h-4 w-4" />
-          </div>
-        </div>
       </div>
     </AppShell>
   );

@@ -5,15 +5,6 @@
 @tailwind utilities;
 
 :root {
-  --bg: #F6F4EF;
-  --surface: #FFFFFF;
-  --surface-2: #F6F3EE;
-  --text: #1C1917;
-  --text-dim: #726A63;
-  --border: rgba(28, 25, 23, 0.09);
-}
-
-.dark {
   --bg: #121011;
   --surface: #191615;
   --surface-2: #201C1A;
