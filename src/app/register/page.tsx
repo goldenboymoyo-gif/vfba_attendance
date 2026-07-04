@@ -16,6 +16,12 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<RegisterRole>('boxer');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
+  const [weightClass, setWeightClass] = useState('');
+  const [regNo, setRegNo] = useState('');
+  const [emergencyContact, setEmergencyContact] = useState('');
+  const [medicalNotes, setMedicalNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const uidRef = useRef<string | null>(null);
@@ -31,13 +37,13 @@ export default function RegisterPage() {
     if (userRole === 'boxer') {
       const boxerData = {
         name,
-        regNo: '',
-        age: 0,
-        gender: '',
-        weightClass: '',
+        regNo: regNo || '',
+        age: parseInt(age) || 0,
+        gender: gender || '',
+        weightClass: weightClass || '',
         phone: phone || '',
-        emergencyContact: '',
-        medicalNotes: '',
+        emergencyContact: emergencyContact || '',
+        medicalNotes: medicalNotes || '',
         joined: new Date().toISOString().slice(0, 10),
         coachId: '',
         status: 'absent',
@@ -230,6 +236,80 @@ export default function RegisterPage() {
                 className="w-full rounded-xl border bg-[var(--surface-2)] px-3.5 py-3 text-sm outline-none focus:border-red"
               />
             </div>
+
+            {role === 'boxer' && (
+              <div className="mb-4 grid grid-cols-2 gap-3 rounded-xl border bg-[var(--surface-2)] p-3">
+                <div className="col-span-2 mb-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-dim)]">
+                  Boxer Profile (optional)
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-[var(--text-dim)]">Age</label>
+                  <input
+                    type="number"
+                    name="age"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    placeholder="18"
+                    className="w-full rounded-lg border bg-[var(--surface)] px-2.5 py-2 text-sm outline-none focus:border-red"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-[var(--text-dim)]">Gender</label>
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                    className="w-full rounded-lg border bg-[var(--surface)] px-2.5 py-2 text-sm outline-none focus:border-red"
+                  >
+                    <option value="">—</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-[var(--text-dim)]">Weight Class</label>
+                  <input
+                    type="text"
+                    name="weight"
+                    value={weightClass}
+                    onChange={(e) => setWeightClass(e.target.value)}
+                    placeholder="e.g. Lightweight"
+                    className="w-full rounded-lg border bg-[var(--surface)] px-2.5 py-2 text-sm outline-none focus:border-red"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] font-semibold text-[var(--text-dim)]">Reg No.</label>
+                  <input
+                    type="text"
+                    name="regNo"
+                    value={regNo}
+                    onChange={(e) => setRegNo(e.target.value)}
+                    placeholder="VFBA-001"
+                    className="w-full rounded-lg border bg-[var(--surface)] px-2.5 py-2 text-sm outline-none focus:border-red"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="mb-1 block text-[11px] font-semibold text-[var(--text-dim)]">Emergency Contact</label>
+                  <input
+                    type="text"
+                    name="emergency"
+                    value={emergencyContact}
+                    onChange={(e) => setEmergencyContact(e.target.value)}
+                    placeholder="Name and phone number"
+                    className="w-full rounded-lg border bg-[var(--surface)] px-2.5 py-2 text-sm outline-none focus:border-red"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="mb-1 block text-[11px] font-semibold text-[var(--text-dim)]">Medical Notes</label>
+                  <textarea
+                    value={medicalNotes}
+                    onChange={(e) => setMedicalNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Allergies, conditions, injuries…"
+                    className="w-full rounded-lg border bg-[var(--surface)] px-2.5 py-2 text-sm outline-none focus:border-red"
+                  />
+                </div>
+              </div>
+            )}
 
             {error && <div className="mb-4 text-[12.5px] font-medium text-red">{error}</div>}
 
