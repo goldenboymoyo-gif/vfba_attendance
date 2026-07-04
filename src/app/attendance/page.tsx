@@ -3,9 +3,9 @@
 import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { useBoxers } from '@/hooks/useBoxers';
-import { setBoxerStatus } from '@/lib/actions';
+import { setBoxerStatus, bulkAutoCheckout, AUTO_CHECKOUT_TIME } from '@/lib/actions';
 import { useToast } from '@/context/ToastContext';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { AttendanceStatus, Boxer } from '@/lib/types';
 
 function initials(name: string) {
@@ -33,6 +33,36 @@ export default function AttendancePage() {
 
   const isCoach = profile?.role === 'coach' || profile?.role === 'admin';
   const rows = isCoach ? boxers : boxers.filter((b) => b.id === profile?.uid);
+  const autoChecked = useRef(false);
+
+  // Auto-checkout all boxers at 19:30 when a coach/admin has the page open
+  useEffect(() => {
+    if (!isCoach || loading || autoChecked.current) return;
+    const now = new Date().toTimeString().slice(0, 5);
+    if (now < AUTO_CHECKOUT_TIME) return;
+    const checkedIn = boxers.filter((b) => b.status === 'in');
+    if (checkedIn.length === 0) return;
+    autoChecked.current = true;
+    bulkAutoCheckout(checkedIn.map((b) => ({ id: b.id, name: b.name })));
+    toast(`Auto-checked out ${checkedIn.length} boxer${checkedIn.length > 1 ? 's' : ''} (training ended at ${AUTO_CHECKOUT_TIME}).`);
+  }, [loading, isCoach, boxers]);
+
+  // Poll every 30s to catch the exact 19:30 transition
+  useEffect(() => {
+    if (!isCoach || autoChecked.current) return;
+    const id = setInterval(() => {
+      const now = new Date().toTimeString().slice(0, 5);
+      if (now >= AUTO_CHECKOUT_TIME && !autoChecked.current) {
+        const checkedIn = boxers.filter((b) => b.status === 'in');
+        if (checkedIn.length === 0) { autoChecked.current = true; return; }
+        autoChecked.current = true;
+        bulkAutoCheckout(checkedIn.map((b) => ({ id: b.id, name: b.name })));
+        toast(`Auto-checked out ${checkedIn.length} boxer${checkedIn.length > 1 ? 's' : ''} (training ended at ${AUTO_CHECKOUT_TIME}).`);
+        clearInterval(id);
+      }
+    }, 30000);
+    return () => clearInterval(id);
+  }, [isCoach, boxers]);
 
   return (
     <AppShell>
