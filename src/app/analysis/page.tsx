@@ -5,10 +5,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useBoxers } from '@/hooks/useBoxers';
 import { useAttendanceLogs } from '@/hooks/useAttendanceLogs';
 import { useMemo, useState } from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title } from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Filler } from 'chart.js';
 import { Doughnut, Bar, Line } from 'react-chartjs-2';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Filler);
 
 export default function AnalysisPage() {
   const { profile } = useAuth();

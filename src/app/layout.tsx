@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: 'VFBA · Attendance System',
   description: 'Victoria Falls Boxing Academy — real-time attendance and training management.',
   manifest: '/manifest.json',
+  icons: { icon: '/logo.png' },
 };
 
 export const viewport = {

@@ -110,24 +110,8 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const { adminAuth, adminDb } = await getAdmin();
-    // Support UID from either JSON body or query string for clients that
-    // might not send a body with DELETE requests.
-    let uid: string | undefined;
-    try {
-      const body = await req.json();
-      uid = body?.uid;
-    } catch {
-      // ignore JSON parse errors and try query params below
-    }
-
-    if (!uid) {
-      try {
-        const url = new URL(req.url);
-        uid = url.searchParams.get('uid') || undefined;
-      } catch {
-        // ignore
-      }
-    }
+    const url = new URL(req.url);
+    const uid = url.searchParams.get('uid');
 
     if (!uid) {
       return NextResponse.json({ error: 'Boxer UID is required.' }, { status: 400 });
