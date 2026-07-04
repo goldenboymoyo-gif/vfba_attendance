@@ -226,6 +226,7 @@ export default function RegisterPage() {
               <label className="mb-1.5 block text-[12.5px] font-semibold text-[var(--text-dim)]">Full Name</label>
               <input
                 type="text"
+                name="name"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -237,6 +238,7 @@ export default function RegisterPage() {
               <label className="mb-1.5 block text-[12.5px] font-semibold text-[var(--text-dim)]">Email</label>
               <input
                 type="email"
+                name="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -248,6 +250,7 @@ export default function RegisterPage() {
               <label className="mb-1.5 block text-[12.5px] font-semibold text-[var(--text-dim)]">Phone</label>
               <input
                 type="tel"
+                name="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+263 77 123 4567"
@@ -258,6 +261,7 @@ export default function RegisterPage() {
               <label className="mb-1.5 block text-[12.5px] font-semibold text-[var(--text-dim)]">Password</label>
               <input
                 type="password"
+                name="password"
                 required
                 minLength={6}
                 value={password}
