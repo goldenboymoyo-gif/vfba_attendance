@@ -29,8 +29,7 @@ export default function RegisterPage() {
       phone: phone || '',
     });
     if (userRole === 'boxer') {
-      // If this fails the dashboard auto-creates it later
-      setDoc(doc(db, 'boxers', uid), {
+      const boxerData = {
         name,
         regNo: '',
         age: 0,
@@ -48,7 +47,17 @@ export default function RegisterPage() {
         attendancePct: 0,
         goal: '',
         achievements: [],
-      }).catch((e) => console.error('Boxer doc creation failed (dashboard will auto-create):', e));
+      };
+      // Retry a few times — auth token may not be ready immediately
+      for (let i = 0; i < 3; i++) {
+        try {
+          await setDoc(doc(db, 'boxers', uid), boxerData);
+          return; // success
+        } catch (e) {
+          if (i < 2) await new Promise((r) => setTimeout(r, 1000));
+          else console.error('Boxer doc creation failed after retries (dashboard will auto-create):', e);
+        }
+      }
     }
   }
 
