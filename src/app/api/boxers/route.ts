@@ -7,7 +7,11 @@ import fs from 'fs';
 function getAdminApp() {
   if (getApps().length) return getApps()[0];
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (raw) return initializeApp({ credential: cert(JSON.parse(raw)) });
+  if (raw) {
+    // Replace escaped newlines (common when pasting JSON into Vercel env vars)
+    const sanitized = raw.replace(/\\n/g, '\n');
+    return initializeApp({ credential: cert(JSON.parse(sanitized)) });
+  }
 
   // Local dev fallback: try reading a service-account.json file from the
   // project root or `server/` directory. This makes `npm run dev` and the
