@@ -1,7 +1,8 @@
 'use client';
 
+import { useTheme } from 'next-themes';
 import { useState, useEffect, useRef } from 'react';
-import { Menu, Search, Bell, X } from 'lucide-react';
+import { Menu, Search, Moon, Sun, Bell, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { deleteNotification } from '@/lib/actions';
@@ -15,9 +16,11 @@ function initials(name: string) {
 }
 
 export function Topbar({ onMenu }: { onMenu: () => void }) {
+  const { theme, setTheme } = useTheme();
   const { profile } = useAuth();
   const { notifications } = useNotifications(10);
   const toast = useToast();
+  const [mounted, setMounted] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -71,6 +74,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
     }, 320);
     return () => { if (debounceRef.current) window.clearTimeout(debounceRef.current); };
   }, [search]);
+  useEffect(() => setMounted(true), []);
 
   const unread = notifications.length; // in a full build, track read state per user
   const canDeleteNotif = profile?.role === 'coach' || profile?.role === 'admin';
@@ -149,6 +153,14 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         </div>
       </div>
       <div className="flex items-center gap-2 sm:gap-2.5">
+        {mounted && (
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="flex h-9 w-9 items-center justify-center rounded-[11px] border bg-[var(--surface)]"
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+        )}
         <div className="relative">
           <button
             onClick={() => setShowNotif((s) => !s)}

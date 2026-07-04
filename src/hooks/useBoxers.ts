@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query, getDocs, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Boxer } from '@/lib/types';
 
@@ -37,7 +37,6 @@ export function useBoxers() {
     let boxersMap: Record<string, Boxer> = {};
     let usersMap: Record<string, Record<string, any>> = {};
     let unsubBoxers: (() => void) | null = null;
-    let unsubUsers: (() => void) | null = null;
 
     function merge() {
       const seen = new Set<string>();
@@ -55,6 +54,17 @@ export function useBoxers() {
       setBoxers(merged);
     }
 
+    // One-time fetch of users with role=boxer (catches registrations where
+    // the boxer doc wasn't created yet).  Runs once on mount.
+    getDocs(query(collection(db, 'users'), where('role', '==', 'boxer')))
+      .then((snap) => {
+        usersMap = {};
+        snap.forEach((d: any) => { usersMap[d.id] = d.data(); });
+        merge();
+      })
+      .catch((err) => console.error('users fetch error (non-fatal):', err));
+
+    // Real-time listener on the boxers collection for live check-in changes
     unsubBoxers = onSnapshot(
       query(collection(db, 'boxers'), orderBy('name')),
       (snap) => {
@@ -72,22 +82,7 @@ export function useBoxers() {
       }
     );
 
-    unsubUsers = onSnapshot(
-      query(collection(db, 'users'), where('role', '==', 'boxer')),
-      (snap) => {
-        usersMap = {};
-        snap.forEach((d: any) => {
-          usersMap[d.id] = d.data();
-        });
-        merge();
-      },
-      (err) => console.error('users snapshot error (non-fatal):', err)
-    );
-
-    return () => {
-      unsubBoxers?.();
-      unsubUsers?.();
-    };
+    return () => unsubBoxers?.();
   }, []);
 
   return { boxers, loading, error };
