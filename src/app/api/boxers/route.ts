@@ -8,10 +8,9 @@ function getAdminApp() {
   if (getApps().length) return getApps()[0];
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (raw) {
-    // Vercel env vars can store JSON with literal newlines (multi-line paste)
-    // or escaped \n — handle both by stripping literal newlines first, then
-    // converting \n sequences to actual newlines for the private_key.
-    const sanitized = raw.replace(/\r?\n/g, '').replace(/\\n/g, '\n');
+    // Strip literal newlines (from multi-line paste in Vercel), then
+    // JSON.parse handles \n escape sequences inside strings automatically.
+    const sanitized = raw.replace(/\r?\n/g, '');
     return initializeApp({ credential: cert(JSON.parse(sanitized)) });
   }
 

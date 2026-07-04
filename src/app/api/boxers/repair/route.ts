@@ -8,7 +8,7 @@ function getAdminApp() {
   if (getApps().length) return getApps()[0];
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (raw) {
-    const sanitized = raw.replace(/\r?\n/g, '').replace(/\\n/g, '\n');
+    const sanitized = raw.replace(/\r?\n/g, '');
     return initializeApp({ credential: cert(JSON.parse(sanitized)) });
   }
   const candidates = [
