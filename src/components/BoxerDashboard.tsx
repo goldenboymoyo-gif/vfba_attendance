@@ -51,8 +51,8 @@ export default function BoxerDashboard() {
     let cancelled = false;
     const ref = doc(db, 'boxers', profile.uid);
     getDoc(ref).then((snap) => {
-      if (cancelled) return;
-      if (snap.exists()) return;
+      if (cancelled || snap.exists()) return;
+      // Copy fields from the users doc if available (age, gender, etc. from registration)
       setDoc(ref, {
         name: profile.name,
         phone: profile.phone || '',
@@ -62,14 +62,14 @@ export default function BoxerDashboard() {
         streak: 0,
         attendancePct: 0,
         goal: '',
-        regNo: '',
-        age: 0,
-        gender: '',
-        weightClass: '',
-        emergencyContact: '',
+        regNo: (profile as any).regNo || '',
+        age: (profile as any).age || 0,
+        gender: (profile as any).gender || '',
+        weightClass: (profile as any).weightClass || '',
+        emergencyContact: (profile as any).emergencyContact || '',
         joined: new Date().toISOString().slice(0, 10),
         coachId: '',
-        medicalNotes: '',
+        medicalNotes: (profile as any).medicalNotes || '',
         achievements: [],
       }).catch((e) => console.error('Failed to create boxer record:', e));
     }).catch((e) => console.error('getDoc error:', e));
